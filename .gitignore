@@ -1,0 +1,9 @@
+.build/
+build/
+dist/
+*.xcodeproj/
+.DS_Store
+.agents/
+
+# Inherited, inactive starter copy; the root Swift package is the project.
+/repo/
