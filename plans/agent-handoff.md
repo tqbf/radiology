@@ -2,6 +2,16 @@
 
 ## Reading order and workspace status
 
+**Current publication state (2026-10-11):** all accumulated workspace source,
+tests, assets and docs are committed and merged to GitHub main through
+[PR #1](https://github.com/tqbf/radiology/pull/1), feature commit3b8f7f5 / merge
+dfc877a at14:53:25 CDT. The user explicitly authorized this merge, overriding the
+earlier restriction for this batch. Local main was fast-forwarded to the confirmed
+remote merge; publication metadata follows in a documentation commit. Start new
+work from main. Earlier local/uncommitted descriptions below are historical.
+269-test/signed-build validation remains the latest implementation gate; physical
+UI limits still apply. See [github-publication.md](github-publication.md).
+
 Latest feature (2026-10-11): third resizable Bookmarks pane, ⌘D caret toggle,
 ordered ⌘0…⌘9 slots, native drag and context-menu reorder, per canonical attached
 checkout/PR-number preferences, explicit Before/After and exact Back. Persisted

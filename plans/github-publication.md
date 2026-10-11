@@ -7,8 +7,17 @@ GitHub's main matched the local base before publication. The user then explicitl
 authorized merging this batch to main, superseding the earlier no-agent-merge
 instruction for this publication. AGENTS.md is retained for future tasks.
 
-Publication is being prepared on the review branch. The final PR link and push
-verification and merge status will be recorded here after GitHub confirms them.
+**Published and merged:** [PR #1](https://github.com/tqbf/radiology/pull/1),
+merged on **2026-10-11 at 19:53:25 UTC / 14:53:25 CDT**. Feature commit:
+`3b8f7f53170c6e4134f4f5bf639b1b81bbd7ffdc`. Merge commit:
+`dfc877a1734cca28543918273ea0a71825f42232`.
+
+All 264 changed files in the accumulated snapshot are now on GitHub main.
+GitHub reported the PR mergeable/CLEAN before the merge and MERGED afterward;
+the merge was pinned to the exact published head commit. Local main was
+fast-forwarded to the confirmed GitHub merge. A documentation follow-up records
+this final status. The review branch is retained; future tasks should start
+from main. No force push, viewed-repository mutation, or reader restart.
 
 ## Included scope
 

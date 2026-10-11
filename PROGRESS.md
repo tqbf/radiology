@@ -1,6 +1,6 @@
 # Progress
 
-## 2026-10-11 — GitHub publication preparation (Codex)
+## 2026-10-11 — Published all reader work and merged to main (Codex)
 
 User authorized pushing all accumulated work to GitHub. Confirmed authenticated
 origin tqbf/radiology, private visibility, main as default branch, no open PRs,
@@ -9,12 +9,21 @@ codex/reader-review-and-bookmarks. Scope includes source/tests/docs/resources an
 supplied icon artwork; existing ignore rules retain generated build artifacts
 and the inactive repo/ starter locally. The most recent whole-package gates are
 269 tests/57 suites, check/signed build/strict signing/resources from the bookmark
-round, with no implementation changes afterward. Preparing the full snapshot
-and PR. The user subsequently explicitly authorized merging this batch to main,
+round, with no implementation changes afterward. The user explicitly authorized merging this batch to main,
 superseding the earlier prohibition for this publication; AGENTS.md is retained.
 Marked SCIP fixtures binary through .gitattributes after Git's text whitespace
 check misclassified protobuf bytes; fixture contents unchanged.
-plans/github-publication.md will receive the confirmed link and merge status.
+
+Committed all264 changed source/test/resource/artwork/doc files as3b8f7f5, pushed
+codex/reader-review-and-bookmarks, and opened https://github.com/tqbf/radiology/pull/1.
+GitHub reported MERGEABLE/CLEAN, with no configured check runs. Merged using the
+exact full head SHA guard after the user's authorization; confirmed state MERGED
+at19:53:25 UTC /14:53:25 CDT, merge commit dfc877a1734cca28543918273ea0a71825f42232.
+Fetched GitHub main and fast-forwarded local main to the merge. Publication
+metadata is recorded in a follow-up documentation commit. No force push, tkos
+mutation or reader restart. Branch retained; future work starts from main.
+plans/github-publication.md records final scope/commits/limits. Earlier local/
+uncommitted entries are historical; accumulated code is now published on main.
 
 ## 2026-10-11 — Repo/PR bookmarks and third inspector pane (Codex)
 

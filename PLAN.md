@@ -4,12 +4,13 @@ Radiology is a native, read-only macOS repository browser. The active implementa
 
 ## Current accepted state
 
-**GitHub publication preparation (2026-10-11):** user authorized publishing all
-accumulated workspace changes. Prepared branch `codex/reader-review-and-bookmarks`
-from the matching local/GitHub `main` baseline, with the existing 269-test signed
-build gates. [Publication scope and status](plans/github-publication.md).
-The user subsequently authorized merging this batch to main. The PR link and
-push/merge verification will follow.
+**Published to GitHub main (2026-10-11):** all accumulated work merged through
+[PR #1](https://github.com/tqbf/radiology/pull/1), explicitly authorized by the
+user after initially requesting a push. Feature commit `3b8f7f5`, merge `dfc877a`
+at **14:53:25 CDT**; local main fast-forwarded to the confirmed GitHub merge.
+The preceding 269-test/signed-build gates cover this snapshot. Publication docs
+supersede earlier rounds' local/uncommitted statements.
+[Scope, commits and validation](plans/github-publication.md).
 
 **Repository/PR bookmarks (2026-10-11):** third independently scrolling,
 resizable Context pane; ⌘D toggles the exact caret, ⌘0–⌘9 use the first ten
