@@ -7,7 +7,7 @@ import Testing
 struct FakeIndexer: SemanticIndexer {
     let id: String
     let displayName: String
-    let defaultEncoding = ColumnEncoding.utf8
+    var defaultEncoding = ColumnEncoding.utf8
     let pinnedVersion: String? = "1.0"
     let manualInstallation = "Install the fake tool."
     /// Shell script given the output path as `$1`.
@@ -15,10 +15,12 @@ struct FakeIndexer: SemanticIndexer {
     let marker: String
     let installable: Bool
     let versionArguments = ["-c", "echo fake 1.0"]
+    var languages: [String] = ["Rust"]
+    var requiresIsolatedWorkspace = false
 
     func strategies(for inspection: RepositoryInspection) -> [IndexingStrategy] {
         inspection.topLevelDirectories(containing: marker).map {
-            IndexingStrategy(indexerID: id, projectDirectory: $0, evidence: [marker], languages: ["Rust"])
+            IndexingStrategy(indexerID: id, projectDirectory: $0, evidence: [marker], languages: languages)
         }
     }
     func locate(in tools: ToolDirectory) -> URL? { installable ? URL(filePath: "/bin/sh") : nil }

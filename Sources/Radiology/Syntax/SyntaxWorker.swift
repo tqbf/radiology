@@ -23,6 +23,10 @@ actor SyntaxWorker {
             throw BrowserError.message("Tree-sitter could not parse this \(language.displayName) file.")
         }
         try Task.checkCancellation()
+        let tests = TestRegionDetector.supportedLanguageIDs.contains(language.id)
+            ? TestRegionDetector(languageID: language.id, buffer: buffer).detect(root: root)
+            : TestRegionDetector.Result()
+        try Task.checkCancellation()
 
         return SyntaxSnapshot(
             path: buffer.path,
@@ -32,7 +36,47 @@ actor SyntaxWorker {
             folds: try folds(queries.folds, tree: tree, buffer: buffer),
             symbols: try symbols(queries.symbols, tree: tree, data: data),
             scopes: try scopes(queries.scopes, tree: tree, data: data),
-            hasParseErrors: root.hasError)
+            hasParseErrors: root.hasError,
+            callSites: try callSites(queries.calls, tree: tree, data: data),
+            supportsCallSites: queries.calls != nil,
+            testRegions: tests.regions,
+            isTestOnlyDocument: tests.isTestOnlyDocument,
+            foldHeaderOwnership: foldHeaders(root: root, languageID: language.id))
+    }
+
+    /// `@call.name` plus the `@call`/`@call.<kind>` capture of each match,
+    /// in source order. `@call.any` is the fallback over every call node: a
+    /// site it alone matches has no supported callee name and is kept as a
+    /// `dynamic` site, so coverage counts it instead of dropping it.
+    /// Comments and string literals are leaves to the parser, so nothing
+    /// inside them can match.
+    private func callSites(_ query: Query?, tree: Tree, data: Data) throws -> [CallSite] {
+        guard let query else { return [] }
+        var named: [Range<Int>: CallSite] = [:]
+        var fallback: [Range<Int>] = []
+        for match in try matches(query, tree: tree, data: data) {
+            guard let site = match.captures.first(where: { capture in
+                guard let captureName = capture.name else { return false }
+                return captureName == "call" || (captureName.hasPrefix("call.") && captureName != "call.name")
+            }) else { continue }
+            let siteRange = intRange(site.node.byteRange)
+            guard siteRange.upperBound <= data.count else { continue }
+            if site.name == "call.any" {
+                fallback.append(siteRange)
+                continue
+            }
+            guard let name = match.captures.first(where: { $0.name == "call.name" }) else { continue }
+            let kind = site.name == "call" ? "call" : String(site.name?.dropFirst("call.".count) ?? "call")
+            let nameRange = intRange(name.node.byteRange)
+            guard nameRange.upperBound <= data.count, !nameRange.isEmpty, named[siteRange] == nil else { continue }
+            named[siteRange] = CallSite(kind: kind, nameByteRange: nameRange, byteRange: siteRange)
+        }
+        var sites = Array(named.values)
+        var seen = Set(named.keys)
+        for range in fallback where seen.insert(range).inserted {
+            sites.append(CallSite(kind: "dynamic", nameByteRange: nil, byteRange: range))
+        }
+        return sites.sorted { ($0.anchorByte, $0.byteRange.lowerBound) < ($1.anchorByte, $1.byteRange.lowerBound) }
     }
 
     /// Query compilation is expensive, so each grammar is compiled once per session.

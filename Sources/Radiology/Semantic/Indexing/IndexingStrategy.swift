@@ -6,6 +6,10 @@ struct RepositoryInspection: Sendable {
     let root: URL
     let paths: [String]
     let isGit: Bool
+    /// Git blob ids per path when the root is an exact snapshot of a commit
+    /// (from `git ls-tree`). Nil for a working tree, whose ids are hashed
+    /// only when an index is generated.
+    var blobIDs: [String: String]? = nil
 
     /// Directories (relative, "" for the root) containing a file with this
     /// exact name, shallowest first, excluding any nested under another match.

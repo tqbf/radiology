@@ -17,13 +17,14 @@ struct RadiologyApp: App {
                 .environment(model)
                 .frame(minWidth: Theme.windowMinWidth, minHeight: Theme.windowMinHeight)
                 .task {
-                    let arguments = LaunchArguments(CommandLine.arguments)
-                    guard let repository = arguments.repository else { return }
-                    await model.openRepository(URL(filePath: repository), selecting: arguments.file)
+                    await model.launch(using: LaunchArguments(CommandLine.arguments))
                 }
         }
         .defaultSize(width: Theme.windowDefaultWidth, height: Theme.windowDefaultHeight)
         .windowResizability(.contentMinSize)
-        .commands { ReaderCommands(model: model) }
+        .commands {
+            SidebarCommands()
+            ReaderCommands(model: model)
+        }
     }
 }

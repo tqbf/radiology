@@ -94,6 +94,17 @@ against the canonical byte ranges. `#set!` is metadata and never filters;
 `#is-not? local` needs name resolution Radiology does not have, so it never
 filters either, and Radiology's own queries avoid it.
 
+## Test-region detection
+
+`SyntaxWorker` also runs `TestRegionDetector` (Rust, Kotlin, Python,
+JavaScript/JSX, TypeScript, TSX) on the same tree after the query roles and
+publishes `SyntaxSnapshot.testRegions` and `isTestOnlyDocument`. It walks
+node shapes directly with tree cursors and an explicit stack, not `.scm`
+queries. Rust `cfg` predicates need three-valued evaluation over token trees,
+and TS needs file-level binding analysis, which queries cannot express. Node
+shapes were confirmed by dumping the pinned grammars. Rules and limits are in
+plans/source-filters.md.
+
 ## Lifecycle and coordinates
 
 `SyntaxWorker` is an actor. Parsers, trees, and compiled queries never leave it;

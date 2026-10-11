@@ -1,6 +1,6 @@
 # Quick file picker
 
-Cmd-K opens Radiology's compact native Go to File sheet; Cmd-P remains an alias.
+Cmd-K opens Radiology's compact native Go to File sheet. Cmd-P opens a pull request by number.
 The search field receives focus immediately. Up/Down changes the active result
 without leaving the field, Return opens it through the normal history-aware file
 navigation path, Escape cancels, and pointer activation opens the clicked row.

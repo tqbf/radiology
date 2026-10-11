@@ -1,12 +1,11 @@
- enum BrowserMode: String, CaseIterable, Identifiable {
+enum BrowserMode: String, CaseIterable, Identifiable {
+    case changes = "Changes"
     case files = "Files"
     case search = "Search"
     var id: Self { self }
-}
 
-/// What the right inspector shows.
-enum InspectorMode: String, CaseIterable, Identifiable {
-    case outline = "Outline"
-    case semantics = "Symbol"
-    var id: Self { self }
+    /// Changes exists only while a pull request is under review.
+    static func available(reviewing: Bool) -> [BrowserMode] {
+        reviewing ? allCases : [.files, .search]
+    }
 }

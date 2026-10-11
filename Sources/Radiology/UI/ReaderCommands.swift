@@ -2,7 +2,9 @@ import SwiftUI
 
 struct ReaderCommands: Commands {
     let model: AppModel
+    @FocusedBinding(\.isContextPresented) private var isContextPresented: Bool?
     var body: some Commands {
+        BookmarkCommands(model: model)
         CommandGroup(replacing: .newItem) {
             Button("Open Repository…", action: model.chooseRepository).keyboardShortcut("o")
             Menu("Open Recent") {
@@ -24,7 +26,6 @@ struct ReaderCommands: Commands {
             Button("Forward", action: model.goForward).keyboardShortcut("]").disabled(!model.history.canGoForward)
             Divider()
             Button("Go to File…", action: model.showFiles).keyboardShortcut("k").disabled(model.repository == nil)
-            Button("Go to File (Command-P Alias)", action: model.showFiles).keyboardShortcut("p").disabled(model.repository == nil)
             Button("Go to Symbol…", action: model.showSymbolSearch).keyboardShortcut("t").disabled(model.repository == nil)
             Button("Go to Line…", action: model.showGoToLine).keyboardShortcut("l").disabled(model.source == nil)
             Button("Search Repository", action: model.showSearch).keyboardShortcut("f", modifiers: [.command, .shift]).disabled(model.repository == nil)
@@ -35,6 +36,26 @@ struct ReaderCommands: Commands {
             Button("Find References", action: model.findReferencesAtCaret)
                 .keyboardShortcut("r", modifiers: [.command, .control])
                 .disabled(model.semantics.caretTarget == nil)
+            Divider()
+            Button("Next Change", action: model.goToNextChange)
+                .keyboardShortcut(.downArrow, modifiers: [.command, .option])
+                .disabled(!model.canGoToNextChange)
+            Button("Previous Change", action: model.goToPreviousChange)
+                .keyboardShortcut(.upArrow, modifiers: [.command, .option])
+                .disabled(!model.canGoToPreviousChange)
+        }
+        CommandMenu("Pull Request") {
+            Button("Open Pull Request…", action: model.showPullRequestNumber).keyboardShortcut("p")
+                .disabled(!model.pullRequests.canReview)
+            Button("Refresh PR", action: model.refreshCurrentPR).disabled(!model.canRefreshPR)
+            Button("Refresh Pull Requests", action: model.refreshPullRequests)
+                .disabled(!model.pullRequests.canReview || model.pullRequests.listPhase == .loading)
+            Button("Exit PR", action: model.exitPullRequest)
+                .disabled(!model.isReviewing && !model.pullRequests.isLoading)
+            Divider()
+            Button("Toggle Before/After", action: model.toggleRevision)
+                .keyboardShortcut("b", modifiers: [.command, .option])
+                .disabled(model.revisionControl.map { !$0.available.contains($0.current.other) } ?? true)
         }
         CommandMenu("Repository") {
             Button("Reindex", action: model.reindexRepository)
@@ -44,7 +65,25 @@ struct ReaderCommands: Commands {
                 .disabled(!model.semantics.status.isIndexing)
         }
         CommandGroup(after: .toolbar) {
-            Button("Reload Repository", action: model.refresh).keyboardShortcut("r").disabled(model.repository == nil)
+            Button(isContextPresented == true ? "Hide Context Inspector" : "Show Context Inspector",
+                   action: toggleContext)
+                .keyboardShortcut("i", modifiers: [.command, .option])
+                .disabled(isContextPresented == nil)
+            Divider()
+            Button("Normal Source") { model.sourceMode = .normal }
+                .keyboardShortcut("1", modifiers: [.command, .option]).disabled(model.source == nil)
+            Button("Critical Lens") { model.sourceMode = .critical }
+                .keyboardShortcut("2", modifiers: [.command, .option]).disabled(model.source == nil)
+            Divider()
+            Toggle("Source Files Only", isOn: Bindable(model).sourceFilters.sourceFilesOnly)
+                .keyboardShortcut("o", modifiers: [.command, .control])
+            Toggle("Hide Tests", isOn: Bindable(model).sourceFilters.hidesTests)
+                .keyboardShortcut("t", modifiers: [.command, .control])
+            Button("Show All Files", action: model.clearSourceFilters)
+                .disabled(!model.sourceFilters.isActive)
+            Divider()
+            Button(model.isReviewing ? "Refresh PR" : "Reload Repository", action: model.refresh)
+                .keyboardShortcut("r").disabled(model.repository == nil || model.pullRequests.isLoading)
             Button("Fold to Definitions", action: model.foldToDefinitions)
                 .keyboardShortcut("0", modifiers: [.command, .option])
                 .disabled(model.syntax == nil)
@@ -56,6 +95,8 @@ struct ReaderCommands: Commands {
             Button("Decrease Source Text Size", action: model.decreaseFontSize).keyboardShortcut("-")
         }
     }
+    private func toggleContext() { isContextPresented?.toggle() }
+
     private func performFind(_ action: NSTextFinder.Action) {
         let item = NSMenuItem()
         item.tag = action.rawValue

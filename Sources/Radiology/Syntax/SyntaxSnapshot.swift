@@ -14,6 +14,35 @@ struct SyntaxSnapshot: Equatable, Sendable {
     let symbols: [DocumentSymbol]
     let scopes: [SourceScope]
     let hasParseErrors: Bool
+    /// Call sites in source order; empty when the grammar ships no `calls`
+    /// query. Each names a callee token to be resolved against SCIP.
+    var callSites: [CallSite] = []
+    /// Whether the grammar can report call sites at all, so an empty list
+    /// means "none" rather than "unsupported".
+    var supportsCallSites = false
+    /// Test-only regions (sorted, disjoint, outermost); empty for grammars
+    /// without test detection. See plans/source-filters.md.
+    var testRegions: [TestRegion] = []
+    /// The whole file compiles only for tests (Rust `#![cfg(test)]`).
+    var isTestOnlyDocument = false
+    var foldHeaderOwnership: [FoldHeaderOwnership] = []
+}
+
+/// One syntactic call: the whole site and, when the grammar names it, the
+/// callee's name token. It is not an edge until the name resolves to a SCIP
+/// occurrence. A site without a name (a parenthesized or computed callee,
+/// `(f)(x)`) is kept so coverage can count it as unresolved rather than
+/// silently omitting it.
+struct CallSite: Equatable, Sendable {
+    /// `call`, `macro`, or `dynamic` (no supported callee name). A macro's
+    /// expansion is unknown, so it never proves anything about reachable
+    /// operations.
+    let kind: String
+    let nameByteRange: Range<Int>?
+    let byteRange: Range<Int>
+    var isMacro: Bool { kind == "macro" }
+    /// Where the site sits for ownership and ordering.
+    var anchorByte: Int { nameByteRange?.lowerBound ?? byteRange.lowerBound }
 }
 
 struct SyntaxHighlight: Equatable, Sendable {

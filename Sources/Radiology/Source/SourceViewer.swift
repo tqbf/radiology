@@ -17,10 +17,43 @@ struct SourceViewer: NSViewRepresentable {
     let semanticTarget: (Int) -> SemanticTarget?
     let occurrenceHighlightRanges: [Range<Int>]
     let activeOccurrenceHighlightRange: Range<Int>?
+    /// The caret's function, faintly shaded behind everything else.
+    let functionShadeRange: Range<Int>?
+    /// Pull request line changes of this exact buffer (whole-line byte
+    /// ranges) and which side they belong to; nil outside a review.
+    var changedByteRanges: [Range<Int>] = []
+    var changedLineRanges: [Range<Int>] = []
+    var changeRevision: ReviewRevision? = nil
+    var reviewIdentity: String? = nil
+    var reviewFoldInput: ReviewFoldInput? = nil
+    var refreshedViewport: SourceLocation? = nil
+    /// The active presentation mode's projection for this exact buffer, or
+    /// nil in Normal mode. Applied at draw time only.
+    let projection: SourceProjection?
+    /// The buffer's precomputed content identity, so a projection is matched
+    /// exactly without hashing the file on every update.
+    let sourceIdentity: SourceContentIdentity?
+    /// Hide Tests' projection for this exact buffer, or nil. Hidden test code
+    /// joins the fold union; the source bytes never change.
+    var testCodePresentation: TestCodePresentation? = nil
+    var onToggleTestRegion: (Int) -> Void = { _ in }
     let pinnedOccurrenceGroups: [PinnedOccurrenceGroup]
+    let criticalityMenu: (Int) -> ReaderTextView.CriticalityMenu?
+    /// Critical-mode hover and counts: generic presentation values; the
+    /// reader and gutter know nothing about classification.
+    let pointerSummariesEnabled: Bool
+    let hoverPresentation: CriticalSummaryModel.HoverPresentation?
+    let foldAnnotations: [String: CountAnnotation]
+    let onPointerOverSource: (Int?) -> Void
+    let onHoverNavigate: (SemanticPosition?, String) -> Void
+    let onPopoverHover: (Bool) -> Void
+    let onHoverDismiss: () -> Void
+    let onSetSymbolCriticality: (String, Criticality?) -> Void
+    let onSetPackageCriticality: (String, Criticality?) -> Void
     let onSelectOccurrences: (Int?) -> Void
     let onTogglePinnedOccurrences: (Int?) -> Void
     let onGoToDefinition: (Int) -> Void
+    let onKeyboardGoToDefinition: (Int, Int) -> Void
     let onFindReferences: (Int) -> Void
     let onCaret: (Int) -> Void
     let onPosition: (Int, Int) -> Void
@@ -81,10 +114,23 @@ struct SourceViewer: NSViewRepresentable {
             reader.onSelectOccurrences = onSelectOccurrences
             reader.onTogglePinnedOccurrences = onTogglePinnedOccurrences
             reader.onGoToDefinition = onGoToDefinition
+            reader.onKeyboardGoToDefinition = onKeyboardGoToDefinition
             reader.onFindReferences = onFindReferences
+            reader.criticalityMenu = criticalityMenu
+            reader.pointerSummariesEnabled = pointerSummariesEnabled
+            reader.onPointerOverSource = onPointerOverSource
+            reader.onHoverNavigate = onHoverNavigate
+            reader.onPopoverHover = onPopoverHover
+            reader.onHoverDismiss = onHoverDismiss
+            reader.onSetSymbolCriticality = onSetSymbolCriticality
+            reader.onSetPackageCriticality = onSetPackageCriticality
+            reader.onToggleTestRegion = onToggleTestRegion
             reader.byteForUTF16 = { [buffer] in buffer.byteOffset(forUTF16: $0) }
             reader.utf16RangeForBytes = { [buffer] in buffer.utf16Range(forByteRange: $0) }
             reader.occurrenceHighlightRanges = occurrenceHighlightRanges.map(buffer.utf16Range(forByteRange:))
+            reader.functionShadeRange = functionShadeRange.map(buffer.utf16Range(forByteRange:))
+            reader.changedCharacterRanges = changedByteRanges.map(buffer.utf16Range(forByteRange:))
+            reader.changeRevision = changeRevision
             reader.activeOccurrenceHighlightRange = activeOccurrenceHighlightRange.map(buffer.utf16Range(forByteRange:))
             reader.pinnedOccurrenceDecorations = pinnedOccurrenceGroups.map { group in
                 ReaderTextView.PinnedDecoration(ranges: group.byteRanges.map(buffer.utf16Range(forByteRange:)),
@@ -92,13 +138,17 @@ struct SourceViewer: NSViewRepresentable {
             }
             let pinnedCount = pinnedOccurrenceGroups.reduce(0) { $0 + $1.byteRanges.count }
             let transientCount = occurrenceHighlightRanges.count
-            let help: String
+            var help: String
             if pinnedCount > 0 {
                 help = "\(pinnedOccurrenceGroups.count) pinned symbol groups, \(pinnedCount) pinned occurrences. Double-click a pinned occurrence to unlock it."
             } else if transientCount > 0 {
                 help = "\(transientCount) occurrences highlighted. Double-click to pin this symbol."
             } else {
                 help = "Read-only source code. Double-click a symbol to pin its occurrences."
+            }
+            let hiddenTests = testCodePresentation?.hiddenRegions.count ?? 0
+            if hiddenTests > 0 {
+                help += " \(hiddenTests) test \(hiddenTests == 1 ? "region is" : "regions are") hidden; click a region's label or gutter control to show it."
             }
             reader.setAccessibilityHelp(help)
             if coordinator.semanticRevision != semanticRevision {
@@ -107,13 +157,22 @@ struct SourceViewer: NSViewRepresentable {
             }
         }
         let changed = coordinator.buffer?.path != buffer.path || coordinator.buffer?.data != buffer.data
+            || coordinator.buffer?.revision != buffer.revision || coordinator.reviewIdentity != reviewIdentity
+        coordinator.reviewIdentity = reviewIdentity
         let syntaxChanged = coordinator.syntax != syntax
-        var appliedDefaultFolds = false
+        // Bound to these exact bytes; converted after any source replacement below.
+        let testsChanged = coordinator.setTestPresentation(
+            testCodePresentation?.matches(path: buffer.path, sourceIdentity: sourceIdentity) == true ? testCodePresentation : nil)
+        let appliedDefaultFolds = coordinator.updateSyntax(syntax, buffer: buffer, resetFolds: changed)
+        let bulkFoldsChanged = coordinator.consumeFoldCommands(definitions: foldToDefinitionsRevision, functions: collapseFunctionsRevision)
+        let topCharacter = !changed && coordinator.revision == revision
+            && (appliedDefaultFolds || (reviewFoldInput != nil && coordinator.reviewDefaultsPending))
+            ? coordinator.visibleTopCharacter() : nil
+        let reviewFoldsChanged = coordinator.applyInitialReviewFolds(reviewFoldInput, sourceIdentity: sourceIdentity)
         var appliedFoldLayout = false
         if changed || syntaxChanged || text.font?.pointSize != fontSize {
             if changed { coordinator.cancelDestinationHighlight() }
             (text as? ReaderTextView)?.clearHover()
-            appliedDefaultFolds = coordinator.updateSyntax(syntax, buffer: buffer, resetFolds: changed)
             let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
             let paragraph = NSMutableParagraphStyle()
             paragraph.minimumLineHeight = max(Theme.sourceLineHeight, fontSize * 1.55)
@@ -138,19 +197,34 @@ struct SourceViewer: NSViewRepresentable {
                 ruler.fontSize = fontSize
                 ruler.folds = syntax?.folds ?? []
                 ruler.onToggleFold = { [weak coordinator] fold in coordinator?.toggleFold(fold) }
+                ruler.onToggleTestRegion = onToggleTestRegion
             }
             // Resolve default folds against a pending/restored destination
             // before asking TextKit to generate any folded glyphs. Applying
             // one fold layout and immediately invalidating it again to reveal
             // the destination can re-enter NSATSTypesetter on large files.
             if changed || coordinator.revision != revision || appliedDefaultFolds {
-                let byte = target?.path == buffer.path ? target?.byteOffset ?? 0 : 0
+                let byte = changed || coordinator.revision != revision
+                    ? (target?.path == buffer.path ? target?.byteOffset ?? 0 : 0)
+                    : buffer.byteOffset(forUTF16: text.selectedRange().location)
                 coordinator.reveal(byteOffset: byte, applyAttributes: false)
+                if let viewport = refreshedViewport, viewport.path == buffer.path, viewport.revision == buffer.revision {
+                    coordinator.reveal(byteOffset: viewport.byteOffset, applyAttributes: false)
+                }
             }
             coordinator.applyFoldAttributes()
             appliedFoldLayout = true
+        } else if testsChanged || reviewFoldsChanged || bulkFoldsChanged {
+            // Hide Tests toggled or a region was revealed: reveal any fold
+            // around a new target first, then apply one combined layout.
+            if coordinator.revision != revision {
+                coordinator.reveal(byteOffset: target?.path == buffer.path ? target?.byteOffset ?? 0 : 0, applyAttributes: false)
+            }
+            view.gutter?.onToggleTestRegion = onToggleTestRegion
+            coordinator.applyFoldAttributes()
+            appliedFoldLayout = true
         }
-        if changed || coordinator.revision != revision || appliedDefaultFolds {
+        if changed || coordinator.revision != revision {
             coordinator.revision = revision
             coordinator.cancelDestinationHighlight()
             (text as? ReaderTextView)?.clearHover()
@@ -162,19 +236,38 @@ struct SourceViewer: NSViewRepresentable {
             // corrupt its glyph-to-character mapping.
             coordinator.reveal(byteOffset: byte, applyAttributes: !appliedFoldLayout)
             if selectsTarget { text.setSelectedRange(range) }
-            coordinator.programmaticPositionByte = byte
-            scroll.pendingLocation = range.location
-            scroll.needsLayout = true
-            coordinator.settleNavigation(atUTF16: range.location, revision: revision)
-            view.gutter?.currentLine = buffer.line(atByte: byte)
+            if let viewport = refreshedViewport, viewport.path == buffer.path, viewport.revision == buffer.revision {
+                coordinator.preserveViewport(atCharacter: buffer.utf16Offset(forByte: viewport.byteOffset))
+            } else {
+                coordinator.programmaticPositionByte = byte
+                scroll.pendingLocation = range.location
+                scroll.needsLayout = true
+                coordinator.settleNavigation(atUTF16: range.location, revision: revision)
+            }
         }
-        if coordinator.foldToDefinitionsRevision != foldToDefinitionsRevision {
-            coordinator.foldToDefinitionsRevision = foldToDefinitionsRevision
-            coordinator.foldToDefinitions()
+        if !changed, (reviewFoldsChanged || appliedDefaultFolds), let topCharacter {
+            coordinator.preserveViewport(atCharacter: topCharacter)
         }
-        if coordinator.collapseFunctionsRevision != collapseFunctionsRevision {
-            coordinator.collapseFunctionsRevision = collapseFunctionsRevision
-            coordinator.collapseFunctions()
+        // The projection is bound to exact bytes; a stale one for another
+        // file or older contents is never applied. Source replacement above
+        // already cleared the previous ranges.
+        coordinator.applyProjection(projection?.matches(path: buffer.path, sourceIdentity: sourceIdentity) == true ? projection : nil,
+                                    buffer: buffer)
+        if let reader = text as? ReaderTextView {
+            // A presentation for other bytes (file or index changed under it) never shows.
+            reader.hoverPresentation = changed ? nil : hoverPresentation
+        }
+        if let ruler = view.gutter {
+            if ruler.changedLines != changedLineRanges || ruler.changeRevision != changeRevision {
+                ruler.changedLines = changedLineRanges
+                ruler.changeRevision = changeRevision
+                ruler.needsDisplay = true
+            }
+            if ruler.annotations != foldAnnotations || ruler.showsAnnotations != pointerSummariesEnabled {
+                ruler.annotations = foldAnnotations
+                ruler.showsAnnotations = pointerSummariesEnabled
+                ruler.needsDisplay = true
+            }
         }
         if coordinator.highlightRevision != highlightRevision {
             coordinator.highlightRevision = highlightRevision

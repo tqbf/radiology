@@ -11,17 +11,131 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
     var onCaret: ((Int) -> Void)?
     var revision = -1
     var focusRevision = -1
-    var foldToDefinitionsRevision = 0
-    var collapseFunctionsRevision = 0
+    private var foldToDefinitionsRevision: Int?
+    private var collapseFunctionsRevision: Int?
+    var reviewIdentity: String?
+    private var appliedReviewDefaults = false
+    private var manualFoldIDs = Set<String>()
+    private var manualDefaultOverride = false
     var highlightRevision = 0
     var semanticRevision = -1
     var updating = false
     var programmaticPositionByte: Int?
     private var foldedIDs = Set<String>()
     private var foldedCharacterRanges: [NSRange] = []
+    /// Sorted, disjoint UTF-16 ranges the active projection recedes. Used
+    /// only at draw time through `shouldUseTemporaryAttributes`; nothing in
+    /// the text storage or layout changes.
+    private(set) var recededCharacterRanges: [NSRange] = []
+    /// The projection's own receded ranges, before hidden-test headers join.
+    private var projectionCharacterRanges: [NSRange] = []
+    private var appliedProjectionID: UUID?
+    /// Hide Tests for the buffer in TextKit: hidden ranges join the fold
+    /// union; headers recede with the projection. See plans/source-filters.md.
+    private(set) var testPresentation: TestCodePresentation?
+    private var testHeaderCharacterRanges: [NSRange] = []
+    /// How often TextKit consulted the projection hook; tests use it to prove
+    /// the draw path really asks (it does so for every drawn run, with or
+    /// without temporary attributes present).
+    private(set) var projectionHookCalls = 0
     private var highlightTask: Task<Void, Never>?
     private var navigationLayoutTask: Task<Void, Never>?
     private var appliedDefaultFunctionFolds = false
+
+    // MARK: - Projection
+
+    /// Installs (or clears) the projection's receded ranges for the buffer
+    /// currently in TextKit and repaints the visible source. Equal
+    /// projections are not reapplied, so caret-driven updates cost one
+    /// identity comparison.
+    func applyProjection(_ projection: SourceProjection?, buffer: SourceBuffer) {
+        guard projection?.id != appliedProjectionID else { return }
+        appliedProjectionID = projection?.id
+        projectionCharacterRanges = (projection?.recededByteRanges ?? []).map(buffer.utf16Range(forByteRange:))
+            .filter { $0.length > 0 }
+        recededCharacterRanges = Self.union(projectionCharacterRanges + testHeaderCharacterRanges)
+        guard let textView, let layout = textView.layoutManager else { return }
+        if layout.delegate !== self { layout.delegate = self }
+        textView.setNeedsDisplay(textView.visibleRect)
+    }
+
+    /// Records Hide Tests' presentation (already matched to the buffer the
+    /// viewer is showing). Returns whether it changed; ranges are converted
+    /// by the next `applyFoldAttributes`, after any source replacement.
+    func setTestPresentation(_ presentation: TestCodePresentation?) -> Bool {
+        guard presentation != testPresentation else { return false }
+        testPresentation = presentation
+        return true
+    }
+
+    /// Sorted, disjoint union of UTF-16 ranges; overlapping or touching
+    /// ranges merge, contained ranges vanish.
+    static func union(_ ranges: [NSRange]) -> [NSRange] {
+        let sorted = ranges.filter { $0.length > 0 }.sorted {
+            $0.location == $1.location ? $0.length > $1.length : $0.location < $1.location
+        }
+        var merged: [NSRange] = []
+        for candidate in sorted {
+            if let last = merged.last, candidate.location <= NSMaxRange(last) {
+                if NSMaxRange(candidate) > NSMaxRange(last) {
+                    merged[merged.count - 1] = NSRange(location: last.location, length: NSMaxRange(candidate) - last.location)
+                }
+            } else {
+                merged.append(candidate)
+            }
+        }
+        return merged
+    }
+
+    /// The presentation when it belongs to `buffer`; nil for other bytes.
+    private func testPresentation(for buffer: SourceBuffer) -> TestCodePresentation? {
+        guard let testPresentation, testPresentation.path == buffer.path,
+              testPresentation.sourceIdentity.byteCount == buffer.data.count else { return nil }
+        return testPresentation
+    }
+
+    /// Pushes Hide Tests' header dimming, gutter markers, and inline labels
+    /// for the buffer in TextKit; returns the hidden UTF-16 ranges.
+    private func applyTestPresentation(buffer: SourceBuffer, textView: NSTextView) -> [NSRange] {
+        let presentation = testPresentation(for: buffer)
+        let hidden = presentation?.hiddenRegions ?? []
+        let headers = hidden.map { buffer.utf16Range(forByteRange: $0.headerByteRange) }
+        if headers != testHeaderCharacterRanges {
+            testHeaderCharacterRanges = headers
+            recededCharacterRanges = Self.union(projectionCharacterRanges + testHeaderCharacterRanges)
+            if textView.layoutManager?.delegate !== self { textView.layoutManager?.delegate = self }
+            textView.setNeedsDisplay(textView.visibleRect)
+        }
+        gutter?.testMarkers = hidden.map {
+            LineNumberGutter.TestMarker(id: $0.id, headerLine: $0.headerLine, hiddenLineCount: $0.hiddenLineCount)
+        }
+        (textView as? ReaderTextView)?.testRegionLabels = (presentation?.regions ?? []).map { region in
+            ReaderTextView.TestRegionLabel(id: region.id,
+                                           headerEnd: buffer.utf16Offset(forByte: region.headerByteRange.upperBound),
+                                           hiddenLineCount: region.hiddenLineCount, isHidden: region.isHidden)
+        }
+        return hidden.map { buffer.utf16Range(forByteRange: $0.hiddenByteRange) }
+    }
+
+    /// The receded range containing `location`, or the gap up to the next
+    /// receded range. Binary search over the sorted disjoint array.
+    func recededRun(at location: Int) -> (isReceded: Bool, range: NSRange) {
+        var lower = 0
+        var upper = recededCharacterRanges.count
+        while lower < upper {
+            let middle = lower + (upper - lower) / 2
+            let range = recededCharacterRanges[middle]
+            if location < range.location {
+                upper = middle
+            } else if location >= NSMaxRange(range) {
+                lower = middle + 1
+            } else {
+                return (true, range)
+            }
+        }
+        let next = lower < recededCharacterRanges.count ? recededCharacterRanges[lower].location : Int.max
+        return (false, NSRange(location: location, length: max(0, next - location)))
+    }
 
     /// `foldedCharacterRanges` is sorted and disjoint. Glyph generation is a
     /// per-character hot path, so membership must be logarithmic rather than a
@@ -51,6 +165,9 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
         if resetFolds {
             foldedIDs.removeAll()
             appliedDefaultFunctionFolds = false
+            appliedReviewDefaults = false
+            manualFoldIDs.removeAll()
+            manualDefaultOverride = false
         }
         var appliedDefault = false
         if let snapshot, !appliedDefaultFunctionFolds {
@@ -66,7 +183,53 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
         return appliedDefault
     }
 
+    /// Adopt old command counters on a new coordinator; only subsequent commands
+    /// override this document. State changes precede the single combined layout.
+    func consumeFoldCommands(definitions: Int, functions: Int) -> Bool {
+        let doDefinitions = foldToDefinitionsRevision.map { $0 != definitions } ?? false
+        let doFunctions = collapseFunctionsRevision.map { $0 != functions } ?? false
+        foldToDefinitionsRevision = definitions
+        collapseFunctionsRevision = functions
+        if doDefinitions { foldToDefinitions(applyAttributes: false) }
+        if doFunctions { collapseFunctions(applyAttributes: false) }
+        return doDefinitions || doFunctions
+    }
+
+    var reviewDefaultsPending: Bool { !appliedReviewDefaults }
+
+    func applyInitialReviewFolds(_ input: ReviewFoldInput?, sourceIdentity: SourceContentIdentity?) -> Bool {
+        guard !appliedReviewDefaults, let input, let buffer, let syntax, appliedDefaultFunctionFolds,
+              input.reviewID == reviewIdentity, input.path == buffer.path, syntax.path == buffer.path,
+              input.revision == buffer.revision, input.sourceIdentity == sourceIdentity else { return false }
+        appliedReviewDefaults = true
+        guard !manualDefaultOverride else { return false }
+        let before = foldedIDs
+        foldedIDs.subtract(input.foldsToExpand(in: syntax, buffer: buffer).subtracting(manualFoldIDs))
+        gutter?.foldedIDs = foldedIDs
+        return foldedIDs != before
+    }
+
+    /// Preserve the source row at the top of the viewport when late hunks open
+    /// folds. Never replay the file's old navigation target or alter selection.
+    func visibleTopCharacter() -> Int? {
+        guard let textView, let scrollView, let layout = textView.layoutManager, let container = textView.textContainer else { return nil }
+        let rect = scrollView.contentView.bounds.offsetBy(dx: -textView.textContainerOrigin.x, dy: -textView.textContainerOrigin.y)
+        let glyphs = layout.glyphRange(forBoundingRect: NSRect(x: rect.minX, y: rect.minY, width: rect.width, height: 1), in: container)
+        guard let glyph = LineNumberGutter.firstVisibleGlyph(in: glyphs, layout: layout) else { return nil }
+        return layout.characterIndexForGlyph(at: glyph)
+    }
+
+    func preserveViewport(atCharacter character: Int) {
+        navigationLayoutTask?.cancel()
+        programmaticPositionByte = nil
+        guard let scroll = scrollView as? SourceScrollView else { return }
+        scroll.pendingLocation = nil
+        scroll.pendingViewportCharacter = character
+        scroll.needsLayout = true
+    }
+
     func toggleFold(_ fold: SourceFold) {
+        manualFoldIDs.insert(fold.id)
         if foldedIDs.contains(fold.id) { foldedIDs.remove(fold.id) } else { foldedIDs.insert(fold.id) }
         applyFoldAttributes()
         gutter?.foldedIDs = foldedIDs
@@ -75,8 +238,9 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
 
     func isFolded(_ fold: SourceFold) -> Bool { foldedIDs.contains(fold.id) }
 
-    func foldToDefinitions() {
+    func foldToDefinitions(applyAttributes: Bool = true) {
         guard let syntax else { return }
+        manualDefaultOverride = true
         foldedIDs = Set(syntax.folds.filter { fold in
             if fold.kind == "function" { return true }
             guard fold.kind == "type" else { return false }
@@ -86,15 +250,16 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
                     && $0.byteRange.upperBound <= fold.byteRange.upperBound
             }
         }.map(\.id))
-        applyFoldAttributes()
+        if applyAttributes { applyFoldAttributes() }
         gutter?.foldedIDs = foldedIDs
         gutter?.needsDisplay = true
     }
 
-    func collapseFunctions() {
+    func collapseFunctions(applyAttributes: Bool = true) {
         guard let syntax else { return }
+        manualDefaultOverride = true
         foldedIDs.formUnion(syntax.folds.lazy.filter { $0.kind == "function" }.map(\.id))
-        applyFoldAttributes()
+        if applyAttributes { applyFoldAttributes() }
         gutter?.foldedIDs = foldedIDs
         gutter?.needsDisplay = true
     }
@@ -159,20 +324,14 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
         (textView as? ReaderTextView)?.clearHover()
         let previousRanges = foldedCharacterRanges
         let activeFolds = (syntax?.folds ?? []).filter { foldedIDs.contains($0.id) }
-        var requestedRanges = activeFolds.map { hiddenRange(for: $0, buffer: buffer) }
-        requestedRanges.removeAll { $0.length == 0 }
-        requestedRanges.sort {
-            $0.location == $1.location ? $0.length > $1.length : $0.location < $1.location
-        }
+        let hiddenTests = applyTestPresentation(buffer: buffer, textView: textView)
         // TextKit must see a disjoint set. Feeding both a collapsed function
         // and its nested local functions/closures into glyph generation can
         // replace the same glyph run twice, corrupting character mapping and
         // surfacing nested markers on the parent's surviving closing brace.
-        foldedCharacterRanges = requestedRanges.reduce(into: []) { ranges, candidate in
-            guard !ranges.contains(where: { NSLocationInRange(candidate.location, $0)
-                && NSMaxRange(candidate) <= NSMaxRange($0) }) else { return }
-            ranges.append(candidate)
-        }
+        // Hidden test code joins the same union: a fold inside or across a
+        // test region never produces overlapping hidden runs.
+        foldedCharacterRanges = Self.union(activeFolds.map { hiddenRange(for: $0, buffer: buffer) } + hiddenTests)
         guard previousRanges != foldedCharacterRanges else {
             gutter?.needsDisplay = true
             textView.needsDisplay = true
@@ -203,6 +362,10 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
     /// hidden newline and leave hundreds of empty fragments behind.
     func prepareForSourceReplacement() {
         foldedCharacterRanges.removeAll(keepingCapacity: true)
+        recededCharacterRanges.removeAll(keepingCapacity: true)
+        projectionCharacterRanges.removeAll(keepingCapacity: true)
+        testHeaderCharacterRanges.removeAll(keepingCapacity: true)
+        appliedProjectionID = nil
         textView?.layoutManager?.delegate = nil
     }
 
@@ -236,7 +399,6 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
         guard !updating, let textView, let buffer else { return }
         let byte = buffer.byteOffset(forUTF16: textView.selectedRange().location)
         let line = buffer.line(atByte: byte)
-        gutter?.currentLine = line
         gutter?.needsDisplay = true
         textView.needsDisplay = true
         onPosition?(byte, line)
@@ -245,7 +407,9 @@ final class SourceViewerCoordinator: NSObject, NSTextViewDelegate {
 
     @objc func didScroll(_ notification: Notification) {
         gutter?.needsDisplay = true
-        guard !updating, let textView, let buffer, let layout = textView.layoutManager, let container = textView.textContainer else { return }
+        if let reader = textView as? ReaderTextView, reader.hoverPresentation != nil { reader.onHoverDismiss?() }
+        guard !updating, (scrollView as? SourceScrollView)?.isRestoringViewport != true,
+              let textView, let buffer, let layout = textView.layoutManager, let container = textView.textContainer else { return }
         if let byte = programmaticPositionByte {
             programmaticPositionByte = nil
             onPosition?(byte, buffer.line(atByte: byte))
@@ -290,5 +454,37 @@ extension SourceViewerCoordinator: @preconcurrency NSLayoutManagerDelegate {
                        shouldUse action: NSLayoutManager.ControlCharacterAction,
                        forControlCharacterAt charIndex: Int) -> NSLayoutManager.ControlCharacterAction {
         isCharacterFolded(charIndex) ? .zeroAdvancement : action
+    }
+
+    /// Draw-time projection: inside a receded range the glyphs take the text
+    /// storage's own foreground color (the current syntax role, whichever
+    /// highlights have arrived) at reduced opacity. Incoming temporary
+    /// attributes such as the ⌘-hover underline are kept. Outside a receded
+    /// range the incoming attributes pass through unchanged. The effective
+    /// range never extends past the run, the storage color run, or the
+    /// temporary-attribute run TextKit asked about.
+    func layoutManager(_ layoutManager: NSLayoutManager,
+                       shouldUseTemporaryAttributes attrs: [NSAttributedString.Key: Any] = [:],
+                       forDrawingToScreen toScreen: Bool, atCharacterIndex charIndex: Int,
+                       effectiveRange effectiveCharRange: NSRangePointer?) -> [NSAttributedString.Key: Any]? {
+        projectionHookCalls += 1
+        guard toScreen, !recededCharacterRanges.isEmpty else { return attrs.isEmpty ? nil : attrs }
+        var (receded, run) = recededRun(at: charIndex)
+        if let effectiveCharRange, effectiveCharRange.pointee.length > 0,
+           NSLocationInRange(charIndex, effectiveCharRange.pointee) {
+            run = NSIntersectionRange(run, effectiveCharRange.pointee)
+        }
+        guard receded, let storage = layoutManager.textStorage, charIndex < storage.length else {
+            if run.length > 0 { effectiveCharRange?.pointee = run }
+            return attrs.isEmpty ? nil : attrs
+        }
+        var colorRange = NSRange(location: charIndex, length: 1)
+        let base = storage.attribute(.foregroundColor, at: charIndex, effectiveRange: &colorRange) as? NSColor ?? .textColor
+        run = NSIntersectionRange(run, colorRange)
+        if run.length > 0 { effectiveCharRange?.pointee = run }
+        let appearance = textView?.effectiveAppearance ?? NSAppearance.currentDrawing()
+        var merged = attrs
+        merged[.foregroundColor] = base.withAlphaComponent(Theme.recededSourceAlpha(appearance: appearance))
+        return merged
     }
 }

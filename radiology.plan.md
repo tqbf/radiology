@@ -4,7 +4,7 @@
 
 Build a native macOS application optimized for **reading unfamiliar code**, especially large quantities of agent-generated code.
 
-This is not initially an editor.
+This is not an editor.
 
 The first version should answer these questions very well:
 

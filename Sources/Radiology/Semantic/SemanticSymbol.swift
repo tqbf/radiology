@@ -106,7 +106,14 @@ enum SCIPSymbolString {
             } else if character == "[" {
                 if !current.isEmpty { names.append(current) }
                 current = ""
-                while index < descriptors.endIndex, descriptors[index] != "]" { index = descriptors.index(after: index) }
+                // A type-parameter or impl descriptor; its name may itself be a
+                // backtick-escaped `[T]`, so brackets inside backticks don't close it.
+                var quoted = false
+                index = descriptors.index(after: index)
+                while index < descriptors.endIndex, quoted || descriptors[index] != "]" {
+                    if descriptors[index] == "`" { quoted.toggle() }
+                    index = descriptors.index(after: index)
+                }
             } else if character != ")" && character != "]" {
                 current.append(character)
             }
@@ -114,6 +121,18 @@ enum SCIPSymbolString {
         }
         if !current.isEmpty { names.append(current) }
         return names.last ?? symbol
+    }
+
+    /// `package version` from the symbol header, for naming where an external
+    /// symbol comes from. Nil for locals or a placeholder package.
+    static func package(of symbol: String) -> String? {
+        guard !symbol.hasPrefix("local ") else { return nil }
+        let fields = symbol.split(separator: " ", maxSplits: 4, omittingEmptySubsequences: false)
+        guard fields.count >= 4 else { return nil }
+        // Some indexers put a source URL in the version field; the package
+        // name alone is the readable, still-truthful part.
+        let parts = [fields[2], fields[3]].filter { !$0.isEmpty && $0 != "." && !$0.contains("://") }
+        return parts.isEmpty ? nil : parts.joined(separator: " ")
     }
 
     /// Everything after the four space-separated header fields. Double spaces

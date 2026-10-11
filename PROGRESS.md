@@ -1,5 +1,1517 @@
 # Progress
 
+## 2026-10-11 — GitHub publication preparation (Codex)
+
+User authorized pushing all accumulated work to GitHub. Confirmed authenticated
+origin tqbf/radiology, private visibility, main as default branch, no open PRs,
+and local HEAD/main matching origin/main at2e02ae3. Created
+codex/reader-review-and-bookmarks. Scope includes source/tests/docs/resources and
+supplied icon artwork; existing ignore rules retain generated build artifacts
+and the inactive repo/ starter locally. The most recent whole-package gates are
+269 tests/57 suites, check/signed build/strict signing/resources from the bookmark
+round, with no implementation changes afterward. Preparing the full snapshot
+and PR. The user subsequently explicitly authorized merging this batch to main,
+superseding the earlier prohibition for this publication; AGENTS.md is retained.
+Marked SCIP fixtures binary through .gitattributes after Git's text whitespace
+check misclassified protobuf bytes; fixture contents unchanged.
+plans/github-publication.md will receive the confirmed link and merge status.
+
+## 2026-10-11 — Repo/PR bookmarks and third inspector pane (Codex)
+
+Implemented user's bookmark request: Bookmarks beneath Definition/Outline with
+its own scrolling and movable divider. ⌘D/header/menu toggles the genuine caret;
+first ten ordered entries map ⌘0…⌘9. Native List.onMove persists order; Move Up/
+Down/Move to Shortcut context menus offer an alternative, with removal/native
+delete and Return/whole-row buttons. More than ten entries remain clickable.
+Normal/Critical moved to ⌥⌘1/⌥⌘2, freeing plain numbers. Body-medium names,
+caption path/line/revision and tabular shortcut hints keep existing hierarchy;
+PR/Checkout header and faint orange tint show scope. Skills SwiftUI before/after,
+macos-design and typography-designer applied. Contract: plans/bookmarks.md.
+
+BookmarkScope uses canonical attached root + optional PR number, never snapshot
+root/head SHA; checkout, each PR and another repo isolate persistence. Codable
+UUID/relative path/revision/exact UTF-8 byte/label/digest/bounded line anchors live
+in injected UserDefaults. BookmarkModel owns observable order/selection/error;
+BookmarkResolver reads/relocates off MainActor, using actual open bytes if present.
+Unique matching anchors relocate after insertions; ambiguous/edited/missing targets
+report locally without moving source/history. Successful relocation updates
+coordinates/digest while keeping UUID/order/slot. Semantic navigation still forces
+After but now delegates to navigateFromCaret; bookmarks use that shared exact-
+caret history/highlight path with their explicit revision. Scope/root/navigation/
+caret/cancellation/existence guards reject stale jumps; opening cancels work.
+
+The flat three-pane SwiftUI split failed the second native divider test (middle
+stayed at its minimum). Replaced it with nested native two-pane splits; both
+dividers now resize affected panes and preserve context state. Minimum heights
+150/100/100. macOS14 cannot use enumerated sequence as ForEach RandomAccessCollection;
+BookmarkListEntry provides stable UUID/slot data instead. The preexisting fake
+GitHub constructor traps for duplicate SHA pairs; new tests initialize one pair
+and then add the other PR number. No shared fixture or deployment target changed.
+
+Fresh full suite **269 tests /57 suites** passes. Six new tests cover persistent
+scope/order/deletion/slot promotion beyond ten, Unicode/CRLF exact positions,
+changed/ambiguous anchors, malformed storage/invalid moves, real AppModel shortcut
+handlers and exact Back, relaunch, updated anchors and toggling relocated caret,
+disposable real-Git checkout/PR1/PR2/repository scopes and Before/After navigation,
+missing files and cancellation on repo switch. Existing context/semantic/PR
+refresh suites pass. Native inspector test exercises both nested dividers.
+Six production-row/header renders at220/280/420 light/dark verify long text,
+Before/After, ⌘0…⌘9, and two unassigned entries; build/bookmarks-review/*.png.
+Physical drag, menus and keyboard activation remain unverified because this
+session lacks desktop automation. No live interaction or user-reader restart.
+
+make check/build, strict deep codesign, empty-env /tmp packaged resources
+(8 grammars/37 queries/3 scripts), diff check pass. Signed executable built
+**2026-10-11 14:41:15 CDT**. Logs /tmp/radiology-bookmarks-{check,integration,
+tests,build}.log. PLAN/README/architecture/design/handoff/Context and Critical
+shortcut docs updated. Local/uncommitted; no merges or tkos writes.
+
+## 2026-10-11 — Stable caller pills and stop before repeated functions (Codex)
+
+User reported repeated launch entries within a chain, then requested a palette
+and one pill per caller, selected by a hash of method name and file. Added
+CallTreePalette with12 dynamic system hues and portable FNV-1a64 over UTF-8
+name/NUL/full relative file path. Swift Hasher is deliberately avoided because
+its seed changes between launches. Same method/file repeats on separate branches
+keep their hue; differing files contribute to identity. ReferenceCallerPill is
+a native capsule Button containing name/file/call-site line, with12/6-point
+padding, light/dark12%/24% fills and30%/50% borders. System primary/secondary
+text and existing callout semibold/caption regular scales stay legible.
+Increased contrast/Differentiate Without Color strengthen border75%; the latter
+also uses1.5-point width. Branch arrows/deep-level markers sit outside; boundary
+notes stay below. Capsule-wide navigation uses existing exact-caret Back.
+
+Cycle diagnosis: old code stopped recursion but rendered the repeated function
+as a terminal row. It now filters incoming callers before enqueueing, using
+both semantic identities and canonical declaration positions. The preceding
+row notes Recursive branch stopped; sibling branches and separate same-named
+functions remain. Added mutual launch→relay→launch and distinct launch fixtures;
+existing self-cycle assertion now requires one middle entry. New golden palette
+assignments verify portable name/file/Unicode/field-separator hashing. Skills
+swiftui-pro applied before/after, macos-design and typography-designer reviewed.
+Contract: plans/caller-pills.md; traversal details in plans/reference-call-trees.md.
+
+Full suite **263 tests /55 suites** passes. Actual production-row renders at
+220/280/420 in light/dark verify capsules/readability and matching brown entry
+pills on separate branches. Artifacts build/callers-pill-review/{light,dark}-*.png.
+make check/build, strict deep codesign, empty-env /tmp resources (8 grammars,
+37 queries,3 scripts), diff check pass. Signed executable **13:47:46 CDT**.
+Logs /tmp/radiology-callers-pills-{targeted,tests,build,check}.log. Initial targeted
+compile reports the preexisting unused ts variable warning in extraction tests;
+no production warnings. User requested automation retry: this session returns
+Module not found: @oai/sky, including after resetting the Node kernel and checking
+available tools. No native mouse actions or reader restart; GUI checks remain
+unverified. PLAN/README/design/handoff and traversal docs updated. Changes local,
+uncommitted; no merge or tkos writes.
+
+## 2026-10-11 — Reference caller trees and resizable inspector (Codex)
+
+Implemented the user's retry: expanding a reference reveals source context and
+its containing callable's incoming caller tree. ReferenceCallTreeWorker runs
+off MainActor, linking callable definitions by exact SCIP identity and following
+only parsed call-name sites resolved to that identity. Iterative depth-first
+traversal preserves repeated ancestors on separate branches, marks recursive
+calls per path, and has no fixed depth cutoff. Initial 256-row work budgets
+continue with Trace more callers. Closures/non-call references/unindexed owners
+are explicit boundaries; unreadable/stale/parse gaps show partial coverage.
+Per-request file caches are bounded to48; graph state never crosses roots.
+ContextModel starts work on disclosure, cancels on collapse/invalidation, caches
+loaded trees within the reference identity, and rejects superseded completions.
+Caller buttons commit the actual call site through existing semantic navigation.
+
+Restored native VSplitView between Symbol/References and Definition/Outline,
+with independent scrolling and150/100-point minimum pane heights. Removed the
+outer ScrollView/fixed320-point list budgets. Existing title/section hierarchy,
+exact-identity name deduplication and appearance-aware tints remain. Caller names
+use existing callout monospace semibold; caption regular metadata/boundaries and
+tabular line numbers remain quiet. Indentation caps at four levels, with explicit
+level markers deeper; full path/depth are accessible. Applied swiftui-pro before
+code decisions and again for final review, plus macos-design/typography-designer.
+Current contract: plans/reference-call-trees.md, superseding prior layout docs.
+
+Fresh full suite: **260 tests /54 suites**, all pass. Seven added tests cover
+cross-file branching/shared ancestors, UTF-16/emoji/accented names, closures,
+callbacks, nested functions, recursion, gaps/cancellation, lazy loading/caching/
+reset during work, a270-level tree continued beyond256 rows, no navigation on
+disclosure, caller/Back exact-caret restoration, and native divider resizing.
+Actual ContextInspectorView/NSSplitView divider350→230 resizes both panes120
+points without disturbing selection or disclosure. Native split decoration adds
+an extra subview; the test correctly checks its two arrangedSubviews.
+Six actual-row renders at220/280/420 light/dark pass; artifacts
+build/callers-review/{light,dark}-*.png. Physical mouse drag, live List scrolling
+and caller clicks remain unverified: Sky native pipe startup failed. No live app
+or tkos interaction was attempted; user's reader was not restarted.
+
+make check/build, strict deep codesign, empty-env /tmp packaged resource probe
+(8 grammars/37 queries/3 scripts), and diff check pass. Signed executable built
+**2026-10-11 13:31:01 CDT**. Logs /tmp/radiology-callers-{check,tests,integration,
+layout,build}.log. PLAN, README, architecture/design/handoff and current Context
+docs updated. Changes local/uncommitted; no merge.
+
+## 2026-10-08 — Inspector typography and section cues (Codex)
+
+User requested the inspector critique plus faint background cues. Replaced
+forced vertical split/minimum panes with top-aligned scrolling sections, dominant
+title3 semibold symbol/kind/file:line, caption section headings, primary snippet
+text, and blue/teal/purple/neutral backgrounds at2.5% light/5.5% dark. Native
+reference/outline lists receive bounded content budgets; short content no longer
+pushes Definition down. Exact SCIP equality suppresses duplicate Definition
+name; different caret targets remain identified. Location now includes file:line
+or file:line/Here. ContextSymbolRow removed; InspectorSymbolSummary owns the hero.
+UnderCaretDetailView now takes natural disclosure height; short/empty outline
+states compact. References/outline keep native Lists with capped content budgets
+(320 points), rather than exact measured intrinsic heights. Section titles/
+dividers provide meaning without relying on color; decorative tints hidden from
+accessibility. Model/navigation semantics retained. Required skills applied
+before/after. Contract: plans/inspector-refinement.md.
+
+Six actual-component renders at220/280/420 light/dark verify hierarchy/snippet
+contrast/tints. Native PR758 admit_call: title/kind/file:145,4 references plus
+definition occurrence, stacked Definition/location/Here, same name omitted,
+no large inter-section gap. Reference selection stays145; Right disclosure
+expands, Return→127, Cmd-[→145 exact. Screenshot
+build/inspector-review/native-definition.jpeg. Different-target native check
+unverified after selection/offscreen click failures; no claim for that case.
+
+First full suite hit existing SourceScrollView highlight timer assertions (fade
+alpha0.06 at deadline). Targeted test passed; unchanged full rerun passed all
+**253 tests / 52 suites**. make check/build, strict deep codesign, empty-env /tmp
+resources (8 grammars/37 queries/3 scripts), diff check pass. Built
+**2026-10-08 22:59:05 CDT**. Logs /tmp/radiology-inspector-{check,build,tests,
+tests-final,highlight-test}.log. Final separate review closed, no indexing active;
+user's reader/tkos preserved. Current docs supersede fixed vertical-split layout.
+Local/uncommitted; no merges/restarts.
+
+## 2026-10-08 — Toolbar controls and Changes sidebar (Codex)
+
+Implemented the user's dropdown Normal/Critical (default Normal), Before/After
+beside it in the main toolbar, menu-only Source Files Only/Hide Tests. Removed
+SourceFiltersMenu/SourceFilterToggles/SourceRevisionControls; new SourceModePicker
+and SourceRevisionPicker, View Show All Files reset. Breadcrumb now has only
+changed-block/collapse tools, freeing path width. Initial gates: 253 tests/52
+suites, compile/build. Native PR758: Normal default, dropdown Critical, Cmd-1
+Normal reset, Before/After and Source Files Only View menu26→30, caret1/After
+preserved. Screenshot build/toolbar-controls-review/normal-after.jpeg.
+
+User steered ongoing work to tighten Changes sidebar and replace Browse/segmented
+selector with tabs. Added SidebarModeTabs native buttons, body semibold selected
+label/accent underline/selected traits and keyboard Left/Right. ReviewChangeRow
+and Status now separate files: body medium filename (selected semibold), caption
+secondary paths/counts, tabular right-aligned min64-point count lane, M modified
+glyph/circled plus additions, 8% selected tint plus2-point marker. Two-line rows
+and native List selection retained. PR summary separates from list with12/8-point
+spacing; duplicate file count moves to footer. Footer names Source only/Tests
+hidden, with PR head SHA moved to Git-icon tooltip/accessibility.
+
+Six actual-view renders at220/280/400 light/dark cover long names, varied counts,
+modified/added/deleted/renamed/binary and selected row. Off-window List initially
+deferred rows; final renderer uses production row views in a stack. Native PR758
+verified tabs/no Browse, hierarchy/M/plus/right counts, selected Core.kt marker,
+mouse mode switching, Source only Files5509/7019 and Changes26/30, both flags18/30.
+Initial Right Arrow still reached source; explicit button focus fixed it. Final
+Files click focuses tab, Right selects Search/focuses field; Changes restores list.
+Removed duplicate mode accessibility label. Screenshots build/sidebar-review/
+native-{combined,selected-core,source-only,both-filters,final-tabs}.jpeg.
+
+Final gates: **253 tests / 52 suites**, make check/build, strict deep codesign,
+empty-env /tmp resources (8 grammars/37 queries/3 scripts), diff check. Built
+**2026-10-08 17:35:01 CDT**. Logs /tmp/radiology-sidebar-{check,tests,build}.log.
+Required skills applied before/after; docs updated, current contract
+plans/sidebar-refinement.md supersedes older filter icons/segmented mode/header
+revision layout. Separate final review closed with no indexing active; user's
+reader and tkos repository preserved. Local/uncommitted, no merges/restarts.
+
+## 2026-10-08 — Source breadcrumb territory and more context (Codex)
+
+User requested fixed right-aligned revision controls and preferential compaction
+of intermediate paths in the existing second row. Added SourceRevisionControls
+(194 points, native picker136 + changed-block50 + gap8); hidden visible Revision
+label, status retained in help/accessibility. SourceBreadcrumbPath/Trail/Separator/
+Overflow use ViewThatFits and a native full-path/declaration menu, keeping file
+and final declaration legible with middle truncation only at extreme widths.
+Semantic callout scale: regular secondary context, primary file, medium final
+declaration. Required SwiftUI/macOS/type skills applied.
+
+First header build passed 253 tests/52 suites, compile/build/sign/resources;
+native isolated PR758/nomex.rs verified Before/After, Go to Line150's visible
+file/Nomex/admit_call and the full-path/declaration menu. Screenshot
+build/breadcrumb-review/native-pr758.jpeg. A sticky Repository menu held keyboard
+input until its exposed Cancel accessibility action dismissed it. Test app
+closed; user reader untouched.
+
+User then steered the unfinished turn to retain a couple more entries when
+possible. Granular alternatives drop far directories one by one, retain
+declaration ancestors one by one, and use spare width for nearby directories.
+The actual-view render probe caught nested ForEach IDs colliding inside
+ViewThatFits; flattened options into uniquely identified SourceBreadcrumbVariant.
+Ten production-view renders pass at1100/740/560/440/360 in light/dark: src + all
+three declarations at740, file + two declarations at560, file/final at440,
+complete final name at360, fixed controls throughout. make check passes.
+Final native review at the same window size retains three extra nearby
+directories: crates/harness-core/src/nomex.rs/Nomex/admit_call. Initial file
+opening and Go to Line150 exercise zero-to-two declaration changes without the
+ID collision. Screenshot build/breadcrumb-review/native-more-context-pr758.jpeg.
+No indexing active at shutdown; separate review app closed, user's process kept.
+Physical resize not attempted; actual-view renders cover narrow/light/dark.
+
+Final gates: **253 tests / 52 suites**, make check/build, strict deep codesign,
+empty-env /tmp bundled resources (8 grammars/37 queries/3 scripts), diff check.
+Built **2026-10-08 17:02:10 CDT**. Logs /tmp/radiology-breadcrumb-{check,tests,
+build}.log. Required skills reapplied in final review. PLAN/README/design/
+navigation/handoff updated; contract plans/source-breadcrumbs.md. Artifacts and
+renderer live in ignored build/. Changes local/uncommitted, no merges/restarts.
+
+## 2026-10-08 — Remember the last repository and PR (Codex)
+
+User requested last-PR persistence across relaunch. Added ReaderSession and
+ReaderSessionStore: JSON Data in the injected UserDefaults, absolute attached
+checkout path and optional positive PR number. AppModel persists confirmed
+repository/PR opens; Exit PR explicitly records local checkout. Failed/cancelled
+PR choices keep the last confirmed record. The window task now runs a one-time
+launch routine: CLI intent/manual repository choice wins; ordinary launch
+prepares the remembered checkout without saving temporary local mode, then
+opens the PR through existing fresh metadata/worktree/indexing. Cancellation and
+generation guards prevent stale restoration or CLI file navigation. PR-number
+sheet defaults to the remembered PR after a failed restore.
+
+Seven lifecycle tests pass with disposable Git, fake GitHub, isolated preferences
+and separate models. They cover real PR preparation/restoration, attached root,
+fresh metadata, exit/local, CLI/file overrides, failure/retry, failed/cancelled
+choices, newer repository intent, startup replay, missing folders and bad data.
+Initial tests exposed directory-URL equality affecting temporary-save suppression;
+fixed with an explicit restoration marker and directory URL canonicalization.
+A duplicate-SHA-pair fake-client fixture initialization was corrected as well.
+
+Native separate-instance acceptance passed: tkos #758 opened with arguments,
+review-only indexing cancelled, app quit, relaunched with no arguments. New PID
+without arguments restored #758/Changes with fresh head 4106d3606a…. Screenshot
+build/session-review/restored-pr758.jpeg. Review-only indexing cancelled again
+and test app closed. Read current user UI/recent root to confirm tkos #758;
+seeded that session into the real app's absent preference so its first upgraded
+launch restores the review. User reader process and repository bytes untouched.
+
+Final gates: **253 tests / 52 suites**, make check/build, strict deep codesign,
+empty-env /tmp bundled resources (8 grammars/37 queries/3 scripts), diff check.
+Built **2026-10-08 16:36:48 CDT**. Logs /tmp/radiology-session-{tests,full-tests,
+check,build}.log. Applied swiftui-pro before/after; no type or UI surface changes.
+PLAN/README/architecture/handoff and plans/session-restoration.md updated.
+Changes local/uncommitted; no merge or user-reader restart.
+
+## 2026-10-08 — Compact gutter and sparse numbering (Codex)
+
+User steered the active toolbar task: gutter looked too wide; number only every
+fifth line and the cursor line. Gutter width had not changed in the toolbar work
+(104 points already committed). Now 72 points, 20-point disclosure lane, 6-point inset.
+Native monospaced UI numbers 11pt regular/secondary, caret medium/primary,
+independent of source zoom. Caret line derives directly from native selection
+through SourceBuffer; removed duplicate stored gutter currentLine updates.
+Visible glyphs/wrapped-line de-dup stay; PR bars/folds/test markers draw without
+requiring numbered rows. Count badges fit spare width or retain exact counts
+in tooltip/accessibility; function meter now fits the 20-point lane (6–16 points).
+
+Both native NSView/TextKit bitmap-draw tests pass: initial/fifth labels, moving
+caret 7, passive scroll preservation/offscreen clearing, folded line 10 exclusion,
+expansion/canonical restoration with caret 18. Initial harness failures came from
+an unspecified native selection and a document shorter than its scroll viewport;
+fixed harness conditions, without loosening sparse-number expectations.
+
+Live native PR758 review: Go to Line7 shows7 beside10/15/20/25/30/35; Down changes
+only the non-fifth label to8 and clears7. The compact width/source type were
+observed. Screenshots: build/toolbar-review/compact-gutter-caret7.jpeg and
+compact-gutter-caret8.jpeg. Review app had a separate identity/preferences;
+the user's reader was untouched. Physical folded-count/dark-mode/very-large-digit
+acceptance remains manual; bitmap tests cover canonical folded/scroll behavior.
+
+Final combined gates: **246 tests / 51 suites**, make check/build, strict deep
+codesign, empty-env /tmp packaged resources (8 grammars/37 queries/3 scripts),
+diff check. Signed **2026-10-08 16:10:23 CDT**. Logs:
+/tmp/radiology-gutter-tests.log, /tmp/radiology-reader-ui-tests.log,
+/tmp/radiology-reader-ui-build.log. Applied required skills before/after review.
+README/design/navigation/handoff/index docs updated; changes local/uncommitted.
+Scope: plans/source-gutter.md; toolbar task completed below.
+
+## 2026-10-08 — Toolbar grouping (Codex)
+
+User requested the attached toolbar critique: three groups, repository dropdown
+owns Open Repository, PR dropdown owns Exit PR, visibly labeled PR selector,
+and no duplicate PR title. Extracted native ReaderToolbar + RepositoryMenu,
+SourceFiltersMenu, SourceSearchMenu and conditional title-item suppression.
+Navigation/sidebar/history, PR context/icon refresh, and Normal/Critical +
+filter/search/Context use existing actions/bindings; left SidebarCommands added,
+right inspector recovery preserved. Full title remains in Changes/menu/help;
+Before/After and changed-block controls stay in source header. Explicit PR
+titleAndIcon fixes the prior icon-only upward-arrow label.
+
+Applied swiftui-pro, macos-design, typography-designer and swiftui-patterns.
+Native SF body/regular, semibold repo identity, system controls/materials. Native
+computer-use review caught primaryAction tools over the sidebar and duplicate
+automatic sidebar control. Moved toolbar/title modifiers into ReaderDetail and
+removed default sidebar items inside both split columns. Real review now shows
+one navigation toggle, repo/name, #758/refresh, Normal/Critical and trailing
+filter/search/Context; no duplicate PR title or ordinary-width overflow.
+
+Verified repository Open/Open Recent; PR first-level Exit/active number outside
+recent25/refresh commands; related search actions. Toolbar Source Files Only
+changed navigator state and Changes counts together. Left toggle collapsed the
+sidebar; Ctrl-Cmd-S restored it with caret8 unchanged. Physically activated Exit
+PR and confirmed selector Pull Request, Files/local checkout, refresh removed.
+Native resize drag failed -10005:noWindowsAvailable for bundle id and full path;
+state recovery worked, then resizing was stopped. Narrow acceptance unverified.
+No user process interaction/restart. Canceled review-only indexing and closed
+only review identity org.sockpuppet.radiology.toolbar-review. Same final246-test/
+signed gates above. Full scope/screenshots: plans/toolbar-layout.md. No new tests
+solely for reversible toolbar layout/menu edits.
+
+## 2026-10-08 — Kotlin workspace links and complete build inputs (Codex)
+
+User's PR758 screenshot reports scip-kotlin failed before compilation:
+the file harness-development could not be opened. The tracked path
+.agents/skills/harness-development is a directory symlink to
+../../.claude/skills/harness-development. The copier materialized its directory,
+then tried Data(contentsOf:) on the directory. Earlier manual compiler probes
+skipped these directory links and did not validate this production preparation.
+
+Internal file/directory/dangling links now rebase into the disposable copy and
+use link-text hashes, including post-build kind/destination verification. Original
+Git link bytes still verify snapshot identity. Literal destination
+resolution also fixes the pinned tree's dangling external AGENTS.md link;
+external Markdown link bytes are preserved without opening the target. Inputs
+from the complete snapshot blob inventory include tracked vendor/build paths
+omitted by the file browser. Git working-tree discovery similarly expands
+compiler input fingerprints/digests, preserving cache invalidation for excluded
+dependencies. Source publication still uses the browser's source inventory.
+
+The complete real PR758 SemanticIndexService probe passed in **178.684s**:
+repository listing, actual factory/installed adapter/bundled runner, compilation,
+post-build byte checks, source filtering, cache metadata and workspace cleanup.
+It publishes **2,088 source documents**, with real addSecrecyTag definition and
+**18 references in 4 files**, no unreadable/unmapped refs. Kotlin outcome is
+Generated with honest partialBuild coverage, rather than the reported Failed
+preparation. Cache/probe are temporary; pinned head tree is read-only. No
+handwritten-copy bypass this time. Initial full-service attempt exposed a second
+dangling AGENTS.md resolution failure; corrected and covered by the regression.
+
+Regression tests cover relative/absolute directory links, internal file links,
+dangling Markdown/internal links, original checkout immutability, link/input
+tampering, and copying tracked dependencies excluded by the browser. The actual
+Git working-tree service test changes only a vendor input and proves regeneration,
+rather than a false current cache. Focused **6 tests** and full **244 tests / 50
+suites** pass; make check/build, strict deep codesign, empty-env packaged resources
+(8 grammars/37 query files/3 scripts) and diff check pass. Signed
+**2026-10-08 01:10:35 CDT**. Logs: /tmp/radiology-kotlin-service-probe.log,
+/tmp/radiology-kotlin-directory-tests.log, /tmp/radiology-kotlin-link-tests.log,
+/tmp/radiology-kotlin-link-build.log. Attached tkos Git status unchanged.
+
+Applied swiftui-pro before/after review; actor/generation/cancellation boundaries
+retained. No UI/type changes, user-app interaction or restart, commits/pushes, or
+attached-checkout builds. Relaunch the new bundle and reopen PR758 to retry
+Kotlin automatically. Partial coverage can remain for unavailable sources/build
+variants. Updated PLAN/handoff and plans/kotlin-semantic-indexing.md; earlier
+manual compiler evidence above/below does not replace this production-path proof.
+
+## 2026-10-07 — Kotlin semantics in PR After (Codex)
+
+User reported references and caret symbol state failing in PR mode. Screenshot
+shows tkos PR #758 After, Kotlin Contacts source, and File not indexed. Root
+cause for that example: registry has no Kotlin/JVM indexer; syntax declaration
+tracking exists but semantic under-caret/definitions/references do not. User
+explicitly selected Add Kotlin semantic support.
+
+Added ScipKotlinIndexer, managed compiler-tool installation and bundled Gradle/
+runner scripts. The pinned source `9f288dd339c7e9fc257a7b21714d9a402fd4d837`
+supports Kotlin2.4.20; installed CLI reports `0.13.1-radiology-9f288dd339c7`.
+AGP9 needs current compilerOptions and task discovery after projectsEvaluated:
+ordinary afterEvaluate could report success without compiling Android sources.
+Builds copy genuine inputs to a disposable index-cache workspace, preserve
+paths/bytes/modes, reject unsafe links/traversal/stale inputs, and verify source
+hashes again after compilation. No fake manifests or guessed symbol edges.
+Successful compiler shards survive independent failures as persisted Partial.
+Generation/cache/reuse exclude generated documents outside the reader snapshot.
+Compiler data exposed a UTF-16-column/UTF-8-file mismatch: adapter defaultEncoding
+now reaches SemanticIndex.Input on all three loading paths; explicit document
+encoding wins. Existing Context, reference commits, definition and exact Back
+use those identities. Before remains syntax-only; semantic destinations After.
+
+Actual PR758 head `5d2ffdd2976c62a220118e30780edfe8fb6f2120`, compiled in
+/private/tmp/radiology-kotlin-pr758 on AGP9.4.1/Kotlin2.4.20/Gradle9.7.1/JDK17.
+Targeted Contacts/dependencies/tests: success, 112 compiler documents. Broader build:
+2m03s, 1,276 Gradle tasks, 2,379 documents; installRustAndroidTarget/installUniffiBindgen
+failed in the manual shell environment, so coverage is Partial. Read-only real
+probe maps 1,355 Contacts occurrences; line 141 addSecrecyTag resolves to
+core/src/main/kotlin/inc/tk/os/module/SecrecyCtx.kt:18, with 18 references in 4 files,
+zero unreadable reference files/unmapped refs. One upstream generated-constructor
+range stays unmapped; no ordinary call token omission is allowed by the probe.
+All 10,394 copied tracked inputs are unchanged by compilation; attached tkos Git
+status unchanged between checks. No build was run in the attached checkout.
+
+A 4,119-byte actual Kotlin compiler fixture tests overloads, same-spelled unrelated
+functions and emoji/accent offsets. PR tests drive native text-selection callbacks
+on a changed call line through Context, Find References, definition/reference
+commits, forced After despite Before preference, passive-scroll departure and
+exact Back, Before clearing/After mapping and metadata-only refresh. Cache/reuse
+tests retain UTF-16/Partial/inventory boundaries; isolation tests reject changes.
+
+Gates: **241 tests / 50 suites**, make check/build, strict deep codesign,
+env-i /tmp packaged verification (8 grammars/37 query files/3 indexing scripts),
+diff check. Signed **2026-10-07 18:36:00 PDT**. Initial suite run during Gradle
+hit an existing 5-second process deadline at 5.62s; idle full runs passed without
+weakening it. Installed tool/version and actual compiler probes pass.
+Applied swiftui-pro before/after, macos-design and typography-designer; the new
+Partial explanation uses existing SF Pro callout regular/secondary metadata.
+
+No physical UI launch, pointer navigation or screenshot recheck; user app left
+running. Relaunch signed bundle to use new registry, then Kotlin index generation
+runs automatically. Other compiler versions/scripts/non-JVM targets unclaimed.
+Native setup failures and missing files stay inspectable; see exact contract,
+logs and manual PR758 acceptance in plans/kotlin-semantic-indexing.md. README,
+PLAN, SCIP support matrix, build/handoff docs updated. All changes local and
+uncommitted; pre-existing work and the earlier inspector recovery preserved.
+
+## 2026-10-07 — Restore Context after dragging it closed (Codex)
+
+The right Context pane is a native SwiftUI inspector: dragging past its
+collapse threshold hides it completely. Recovery previously depended on an
+invariant "Toggle Context" toolbar label, disabled without a source file and
+potentially in toolbar overflow at narrow widths. There was no menu or keyboard
+recovery command.
+
+RootView now publishes its existing presentation binding at scene scope via
+an `@Entry` FocusedValues property in UI/ContextInspectorFocus.swift. The View
+menu consumes the same binding with `@FocusedBinding`, offers Show/Hide Context
+Inspector and ⌥⌘I, and works independently of source availability. The toolbar
+has matching Show/Hide labels, shortcut help, and no source-dependent disabling.
+Scene scope keeps recovery available across controls and while the inspector
+is collapsed. The existing ⌃⌘I Reindex binding is preserved. Native collapse
+and 220/280/420-point inspector sizing remain.
+
+Applied local swiftui-pro before and after implementation and macos-design
+layout/interaction guidance. The post-review replaced a manually declared focus
+key with modern `@Entry`; no new type styles were set. Required skills were
+found in /Users/tqbf/.claude/skills. Used swiftpm-macos for validation.
+
+Validation: make check, **234 tests / 47 suites**, make build (swiftbuild),
+strict deep codesign, empty-environment packaged-resource verification (all
+eight grammars/calls queries), and git diff --check passed. The final @Entry
+implementation compiled in both tests and the packaged build. Signed binary
+**2026-10-07 17:47:35 PDT**. Logs: /tmp/radiology-inspector-tests.log and
+/tmp/radiology-inspector-build.log. No new tests for this small
+command/presentation change.
+Physical divider drag, View-menu action, keyboard restoration, and narrow-window
+toolbar behavior remain unverified. No user app was restarted or operated.
+Exact acceptance steps and implementation contract: plans/context-sidebar.md.
+README shortcuts and PLAN current state updated. Changes remain local; all
+pre-existing work was preserved.
+
+## 2026-10-06 — Refresh active PR without leaving review (GPT Sol)
+
+Visible native Refresh PR beside selector/Exit PR, mirrored in PR menu/command
+menu. One ⌘R binding routes to active-PR refresh; outside PR it remains repository
+reload. Refresh List is separate. Button disables/coalesces while fetching, with
+Refreshing… label/subtitle. Fresh gh metadata and merge base are always queried.
+Same head AND base updates summary/recent row only: reader/history/folds/pins/
+index stay. Changed base (even same head) follows the actual snapshot-update path.
+
+Old reader stays usable until candidate worktree/listing/source/mapping succeeds.
+Active and candidate worktree leases prevent eviction, including tested limit1
+failure/cancellation. Failure keeps old state; native alert retry retains refresh
+intent. Exit/cancel/differentPR/repository switch drop stale completion. An atomic
+prepared swap clears SHA-obsolete history/semantic/hunk generations, keeping
+latest commit-time reader and options. Pending source loads are awaited/rechecked.
+Exact byte equality preserves caret/viewport offsets and only that document's
+pins; otherwise Git blob hunks map lines (columns retained only on byte-equal
+mapped lines). Proven rename deltas restore paths; unavailable revision switches
+with notice; missing file falls to Changes with quiet reason. No spelling guesses.
+Mode/font/filters/directory expansion/attached-root marks remain. Before syntax-only;
+After indexes use existing whole-repository provenance/revision caches. Refreshed
+viewport uses existing restoration, and subsequent navigation clears it.
+
+Actual gates: **234 tests / 47 suites**, make check/build swiftbuild, strict deep
+codesign, env-i /tmp eight-grammar/all-calls resources, clean diff check. Signed
+binary **2026-10-06 20:52:31 PDT**. Seven refresh regressions use FakeGitHub plus
+real temporary Git objects/worktrees: metadata no-op/coalesced command routing,
+latest caret/viewport/options, changed-base Before and deletion, network/source
+failure + refresh retry, limit1 canceled candidate, pending revision load, proven
+rename/exact pin bytes/missing fallback, stale cancel/PR/repository/Exit. Attached
+fixture checkout status remains unchanged. First failing wait was /var vs
+/private/var test-path comparison, fixed by normalizing aliases.
+
+No native launch/attachment: repeated old-reader selection makes further attempts
+impractical under user's constraint. No visual/real-GitHub refresh claim; existing
+UI gaps remain. Exact manual check and logs in plans/pull-request-ui-review.md.
+No tkos/pin/mark/user-reader/GitHub/branch writes or commits/pushes; RADIO preserved.
+
+## 2026-10-06 — PR defaults open changed functions/blocks (GPT Sol)
+
+PR files/revisions now initially expand ordinary folds intersecting changed
+ranges or containing empty-side hunk points, including enclosing ancestors.
+Signature-only edits open the owning body via whole function/closure scopes;
+Rust attached attributes and Python decorated definitions have separate parsed
+header ownership, leaving lexical/call/semantic scopes unchanged. Sibling
+closures and unchanged functions keep their normal defaults. Added/removed
+functions use the actual After/Before ranges. An EOF point inside an unfinished
+or indentation body can open it; a boundary after a closed braced function does
+not implicate that unrelated neighbor. No invented line highlights.
+
+One-time application waits for matching syntax and hunks in either async order,
+keyed by review/path/revision/content. Manual fold choices and bulk commands
+while diff is pending win; recollapse is not forced open by later updates.
+Fresh coordinators adopt incoming command counters, avoiding replay of an old
+Collapse/Fold to Definitions from another file. New loaded documents/revisions
+reset default application; index/theme/font/filter/caret updates do not. Explicit
+Hide Tests stays in force; normal fold expansion does not reveal test regions.
+
+Fold state changes precede one combined layout, not model navigation. Late
+layout preserves the visible source row/selection, cancels obsolete navigation
+layout/position markers, suppresses restoration callbacks, and yields to a
+newer explicit jump. Normal local fold defaults remain. No new control/toggle.
+
+Actual gates: **227 tests / 46 suites**, check/build swiftbuild, strict deep
+codesign, env-i /tmp eight-grammar/all-calls resources, clean diff check. Signed
+binary **2026-10-06 14:47:45 PDT**. Native coordinator/parser/component regressions
+cover async orders, nested/header/annotation/closure ownership, manual choices,
+old/new bulk commands, new/stale identity/revision, empty sides/EOF/added/deleted,
+Hide Tests, viewport/selection preservation, newer-jump priority and obsolete
+marker then real scroll reporting actual viewport with unchanged caret line.
+
+No app/UI launch or attachment this round: repeated older-reader selection made
+another attempt impractical under user's bounded-tooling preference. No live
+acceptance or new screenshots; prior gaps remain. Real PR anchors are manual,
+not claimed new backend/GUI runs. Files and exact checks in
+plans/pull-request-ui-review.md. User reader/pins/marks/tkos untouched; RADIO.png,
+inactive repo/ and all prior work preserved. No branch/GitHub/commit/push changes.
+
+## 2026-10-06 — Previous/next changed-block source controls (GPT Sol)
+
+PR source header now has compact native up/down buttons beside Before/After,
+with accessible Previous/Next Changed Block names and ⌥⌘↑/↓ tooltips. Existing
+Navigate bindings remain; model-derived per-direction availability is shared by
+menu and buttons. Long breadcrumbs/status horizontally scroll in a constrained
+header, reserving fixed-size revision/navigation controls. No new sidebar/counter.
+
+Distinct hunks are navigated in the exact current revision/path/content. Inside
+a block, skip to adjacent block; in an unchanged gap, choose closest block in
+direction; at ends, no wrap. Empty-side pure-add/delete anchors remain reachable,
+including EOF without a final newline, without invented line washes. Caret at
+EOF of an unterminated changed line counts inside that block; trailing empty
+newline line is outside. Availability observes genuine caret revision (including
+same-line changes), not passive scroll. Explicit jumps save exact departure
+before navigate, reveal existing folds/test regions, highlight and focus source;
+Back returns exact caret/revision even after passive scrolling.
+
+Actual gates: **220 tests / 45 suites**, make check/build swiftbuild, strict deep
+codesign, env-i /tmp resources (8 grammars/all calls), clean diff check. Signed
+binary **2026-10-06 14:22:51 PDT**. Multi-hunk gaps/inside/bounds, Before/After,
+empty-side EOF, unterminated EOF caret, stale identity/revision, binary/pending,
+Observation invalidation and exact Back/test-region reveal regressions pass.
+
+Native attachment plus one full-path recovery selected user's older #753 app.rs
+reader instead of fresh snapshot_policy.rs instance. Stopped without actions or
+screenshots; closed only review PID 49593, preserved user PID 33005. Live header,
+narrow layout and pointer/keyboard behavior remain manual; prior UI limits remain.
+No dataset/marks/pins/GitHub/branch changes or commits/pushes. Evidence/manual
+steps: plans/pull-request-ui-review.md.
+
+## 2026-10-05 — PR Changes respects source filters (GPT Sol)
+
+User superseded the previous Files-only sidebar scope. Changes now uses shared
+SourceFilters.includes for both Source Files Only and Hide Tests, preserving PR
+order and full canonical review.changes. Deleted files use available Before
+path; renames/copies remain when either available Before/After path passes both
+active filters. Markdown additions/modifications disappear with Source Only;
+source changes survive extension/source-set moves without inferred semantics.
+
+Changes reuses compact filter toggles, shows visible-of-total changed-file counts
+and visible text-file diff totals (binary counts unavailable). Filtered-empty
+has No Changes to Show with Show All Files; genuinely empty remains No Changed
+Files. Selection sync is limited to visible rows; filtering/current-file sync
+does not reopen or navigate. Excluded current file/caret/history/revision stays.
+Changes footer counts changes, not contradictory repository-tree files.
+
+Actual gates: check, **216 tests / 44 suites**, swiftbuild signed build, strict
+deep codesign, env-i /tmp resources (8 grammars/all calls queries), clean diff
+check. Binary **2026-10-05 19:00:13 PDT**. Regressions cover mixed markdown/code/
+test/build rows, both independent filters, deletions, rename directions, totals,
+filtered versus genuine empty, visible selection/reset, canonical data and an
+excluded Before Markdown reader preserving navigation/history. No native attempt
+per user constraint; previous old-reader attachment/PR visual limitations remain.
+Manual check/evidence in plans/source-filters-ui-review.md. No dataset, pins,
+marks, branch, GitHub or user-reader changes; no commits/pushes.
+
+## 2026-10-04 — Source filter acceptance repairs (GPT Sol)
+
+Native attachment and single full-path recovery selected the user's old #691
+nomex_e2e.rs review rather than the fresh app.rs instance. Stopped without UI
+actions/screenshots; closed only review PID 60963, preserved user PID 31152.
+Live filter appearance/discoverability, pointer reveal, narrow/dark layout and
+PR coexistence remain manual. Previous PR/outline/physical-hover limits remain.
+
+Fixed four concrete source-review edges: pytest functions require test_ prefix
+(not testing_helper/testify/testConnection); Vitest if statements with an else
+stay visible to preserve production; painted label hit IDs always refresh even
+when geometry is identical; labels reject the actual hidden/null header glyph,
+not a character-range mapping expanded to a surviving parent fold row. AppKit
+regression reproduced that fold-row mapping bug, with no label/hit when folded
+and label restored when outer function expands. Geometry/identity and detector
+positive/negative regressions pass. Cleaned extra EOF blank line in history doc.
+
+Actual final gates: check, **213 tests / 43 suites**, swiftbuild signed build,
+strict deep codesign, env-i /tmp eight-grammar/all-calls verification, clean
+git diff --check. Binary **2026-10-04 23:23:22 CDT**. Independently reran the two
+targeted real tkos probes (inline anchors and Files counts), both pass; did not
+repeat Opus's 63-second repository sweep. Model/AppKit tests are separate from
+live UI evidence. Required SwiftUI/native/type guidance reviewed; no speculative
+visual redesign. Dataset/user pins/marks/older reader untouched; no commits/pushes.
+See plans/source-filters-ui-review.md for exact manual screenshots and limits.
+
+## 2026-10-04 — Source filters: Hide Tests and Source Files Only (Opus 5.5; UI acceptance pending with GPT Sol)
+
+Request: hide test code, including Rust test blocks in the middle of
+ordinary files (at least Rust, Kotlin, Python best effort, TypeScript), and
+filter the Files sidebar down to source code. Design recorded first in
+[plans/source-filters.md](plans/source-filters.md).
+
+**Options and location.** Two independent icon toggles beside the Files
+**Filter files** field (Xcode navigator idiom), mirrored as checkmarked View
+menu toggles: **Source Files Only** (⌃⌘O) and **Hide Tests** (⌃⌘T). Both
+persist app-wide in UserDefaults (`sourceFilesOnly`, `hideTests`) and are off
+by default. Toggling never touches the repository model, caret, history,
+pins, marks, folds or source bytes.
+
+**Files tree.** Rebuilt from included files, so empty directories prune. It
+keeps Finder order, and directory expansion is now explicit, path-keyed state
+(`FileTreeExpansion`, recursive DisclosureGroups replacing OutlineGroup). Test
+paths match exact components and names: `tests/`, `src/test`, `src/*Test`
+source sets, `__tests__`, `*.test.ts`, `*_test.go`, `test_*.py`, `*_tests.rs`,
+and so on. `contest.rs`, `testing/` and `src/main/**/SpeedTest.kt` stay.
+Source Files Only rejects artifact, dependency, cache and hidden directories
+by component (a `.rs` under `target/` is not source), generated names,
+manifests/configs, docs and data. The filter field's flat list follows the
+options. ⌘K, Search, the Changes list, Go to Symbol and indexing are
+deliberately unfiltered. The open file is never closed; the sidebar footer
+reads “N of M files · open file hidden by filters”. **Show All Files** appears
+when nothing passes.
+
+**Inline detection** runs in `SyntaxWorker` from real node shapes, dumped
+from the pinned grammars, never braces or strings:
+
+- **Rust:** outer attribute siblings, with `cfg` parsed from the token tree
+  and evaluated in three-valued logic. Code hides only when it is false
+  without `test` and not always false; `any(test, feature)`, `not(test)` and
+  `cfg_attr` stay visible. Also `#[test]`/`tokio::test`/`rstest`/`test_case`,
+  and `#![cfg(test)]` modules or files.
+- **Kotlin:** test annotations, test classes, and Kotest specs.
+- **TS/TSX/JS:** top-level framework calls with function arguments, checked
+  against file bindings and test-module imports or `require`, plus Vitest
+  in-source blocks.
+- **Python:** `TestCase` subclasses, and pytest conventions only when the
+  module imports pytest.
+
+Regions expand to whole lines, keep adjacent doc comments, merge across blank
+gaps, and use an explicit stack (no recursion).
+
+**Presentation.** Hidden test text joins the existing fold machinery as one
+sorted disjoint UTF-16 union; the fold reducer now merges overlaps. Each
+region keeps its first line, dimmed through the draw-time receded alpha and
+merged with Critical Lens ranges. The gutter shows ▶ with the existing 9-pt
+hidden-line capsule, and a quiet clickable label reads “Test code · N lines
+hidden” (or “Hide test code” once revealed); its type is the source size − 3,
+system regular, secondary. Reveal state (`revealedTestRegions`) belongs to the
+loaded document and resets on another document (identical bytes elsewhere,
+Before/After), on repository open/reload, and when Hide Tests turns on.
+Explicit navigation reveals its target's region, also when syntax arrives
+later (pending reveal). A plain top-of-file open does not. Back is exact.
+Hidden declarations leave the outline. Test documents opened explicitly show
+in full with a **Test file** footer note; other files show “N test regions
+hidden”.
+
+**Actual gates (this round):** `make check`; `make test` **210 tests / 43
+suites**, including 3 opt-in tkos probes that skip by default; `make build`
+(swiftbuild) signed bundle; `codesign --verify --deep --strict`; `env -i`
+`--verify-resources` from `/tmp` (8 grammars, all calls queries). Signed
+binary **2026-10-04 23:16:01 CDT**. New suites:
+
+- `TestRegionDetectorTests` (12): per-language positives and negatives, the
+  mid-impl boundary, cfg logic, CRLF/Unicode bytes, and 4,000-deep nesting.
+- `TestCodePresentationTests` (5): header and hidden ranges, TextKit null
+  glyphs with gutter-equivalent canonical lines `[1,2,3,8…]`, exact pasteboard
+  bytes, union with default and manual folds across toggling, fold reveal
+  inside revealed tests, model reveal on navigation, Back, Go to Line,
+  toggle reset, pending cross-file reveal, identical-bytes identity, and test
+  documents.
+- `SourceFilterTests` (4): classifier positives and negatives, artifacts,
+  pruning and order, independence, persistence, open-file retention, the
+  field list, expansion, and reload.
+
+The PR flow test now also asserts the filtered tree follows the head snapshot
+and returns to the attached checkout.
+
+**Real tkos (read-only, `RADIOLOGY_REAL_TEST_FILTER_PROBE=1`, passed):**
+
+- `app.rs` regions 35–43, 803–833 (834 `create_durable_agent` outside) and
+  3424–4709.
+- `snapshot_policy.rs` 16–108, with `configure` at 9 visible.
+- `FontFilesTest.kt` 9–87, `test_pr_local.py` 22–179 and
+  `home-design-inspect.test.ts` 22–58; their production counterparts have no
+  regions.
+- Files: Hide Tests shows 4,842 of 6,846 files, Source Files Only 5,198, both
+  3,256.
+- The whole-repository sweep took 63 s with no failures. Among non-test
+  paths, Rust had 183 of 289 files with test code; non-Rust hits were 6
+  Python files with in-script `unittest.TestCase` classes and 1 bun preload
+  `beforeEach`, all inspected as true positives.
+
+tkos HEAD/status unchanged.
+
+**Not verified:** any live UI. No launch, screenshot or native inspection in
+this round, per ownership split. Limits:
+
+- Copy across a hidden region copies the hidden bytes, and find searches
+  them, as with folds.
+- Python is best effort.
+- JS/TS tests inside functions or custom wrappers are not detected.
+- Go/Swift have only path rules.
+
+Sol's checklist: [plans/source-filters-ui-review.md](plans/source-filters-ui-review.md).
+No commits/pushes; RADIO.png, nested `repo/` and earlier dirty work untouched.
+
+## 2026-10-04 — Visible Exit PR toolbar action (GPT Sol)
+
+A text-labelled native **Exit PR** button with arrow.uturn.backward now sits
+immediately beside the PR selector, outside the menu, while a review is active
+or loading. Explicit titleAndIcon keeps the label visible. It uses the existing
+exitPullRequest route: cancel a pending load or return from the snapshot to the
+attached local checkout. Tooltip names local checkout; it does not claim main
+or switch Git branches. Menu Local Checkout remains. Cancellation clears pending
+load errors/failed number; regression confirms aborted retry cannot publish a
+late error or disturb the current local reader/history.
+
+Actual gates: check, **186 tests / 39 suites**, swiftbuild signed build, strict
+deep codesign and env-i /tmp resource verification (8 grammars/all calls queries).
+Binary **2026-10-04 20:18:12 CDT**. No native attempt per user instruction; no
+reader/pin/mark/dataset interaction. One manual check: open or start loading a PR,
+confirm visible Exit PR beside the selector, activate it, and confirm local
+checkout browsing with no stale alert or branch change. Previous UI/hover/outline
+limits remain; see plans/pull-request-ui-review.md. No commits/pushes.
+
+## 2026-10-04 — PR acceptance repairs and real snapshot Rust smoke (GPT Sol)
+
+Fixed five root-review findings: full 40-character blob-to-blob per-file hunks
+(added/deleted use app-owned empty blob); repository-wide/versioned dependency
+context for honest reuse; persisted mixed-reuse Partial on reload/refresh;
+global native PR failure alert with retry/number recovery; Cmd-K guidance.
+Also fixed refresh dropping revision cache options. Meaningful regressions cover
+R100 rename plus old-path directory child, sibling source/include invalidation,
+actual tool-run count, stored provenance reload/refresh and failed-number retry.
+An existing external-definition navigation test now waits for correct document
+semantics after Back, instead of racing load completion.
+
+Final gates: make check; **186 tests / 39 suites**; signed swiftbuild bundle;
+strict deep codesign; env-i /tmp resources (8 grammars/all calls queries).
+Binary **2026-10-04 20:07:43 CDT**. Real probes pass for #724 merged head
+f11c99e3d6/base 488d8768d5 (9 files), #723 merged f4082f9e3a/base 8368298660
+(12), #725 open 3dd325f6b0/base e7380c8269 (744, seven renames).
+Current all-repository policy finds 0/16 matching #724 head/base strategy digests;
+the former 15/16 comparison is historical and not a current reuse claim.
+Actual #724 phone-provisioner After rust-analyzer 1.97.1 generated one document in
+7.48s, mapped 3,711 occurrences with zero unmapped, reused in 0.063 s, rejected a
+simulated sibling-context change and regenerated in 2.47 s. Temporary app-owned
+cache, no dependency fixes; not all 16 projects or a real edited second revision.
+
+Native attempt plus single full-path recovery selected old app.rs:3026 pinned
+reader rather than fresh instance. Stopped without UI action; closed only review
+PID 78172, preserved user PID 87944. NO new screenshot or PR UI verification; prior
+hover/outline limitations remain explicit. TkOS HEAD/status unchanged; no marks,
+pins, RADIO.png, dataset or GitHub writes/commits/pushes. Full UI/manual checklist,
+actual backend boundaries and logs: [plans/pull-request-ui-review.md](plans/pull-request-ui-review.md).
+Handoff/subsystem/index updated. Full snapshot GUI responsiveness/cancellation,
+dark/narrow visuals and semantic pointer/history flow remain manual.
+
+## 2026-10-04 — Pull request review (Fable 5.1; UI acceptance pending with GPT Sol)
+
+Radiology now reads GitHub pull requests of the attached repository. The
+toolbar **Pull Request** menu lists the last 25 (open, merged, closed) via
+read-only `gh`; ⌘P opens any number (the ⌘P file-picker alias was removed;
+⌘K remains). After is the pinned head SHA checked out into an app-owned
+worktree; Before is GitHub's `merge_base_commit`, materialized per changed
+file from the base blob. A **Changes** sidebar segment lists files with
+status, `+n −m` and rename pairs; the file tree and the outline's callables
+carry accent dots where lines changed; added lines get a green gutter bar
+and faint wash in After, removed lines red in Before; a per-file
+**Before | After** control (⌥⌘B) maps the caret through the hunks and
+records history so ⌘[ returns exactly; ⌥⌘↓/↑ step through changes;
+`--pull-request N` launches straight into a review. Design, measured facts
+and contracts: [plans/pull-request-review.md](plans/pull-request-review.md).
+
+Index: the After snapshot is indexed with per-strategy exact-bytes reuse.
+Metadata is format 3 (per-strategy git-blob content digests, `reusedFrom`);
+a strategy is copied from the working-tree cache or another revision only
+when digests match, otherwise regenerated whole (rust-analyzer and the other
+indexers accept nothing smaller than a project). Mixed runs are **Partial**
+with the reason; format-2 caches are never reused for a review. **Before is
+syntax-only**: `Not Indexed (Before)`, no index mapped onto Before bytes.
+GitHub metadata and Git objects are read only; nothing is written to GitHub
+or under the attached folder (bare repo with alternates, fetch by SHA at
+depth 1, `refs/pull/N/head` fallback that still verifies the pinned SHA).
+
+Gates (actual, this round): `make check`, `make test` **184 tests / 39
+suites**, `make build` (swiftbuild) signed bundle, `codesign --verify
+--deep --strict`, `env -i` `--verify-resources` from `/tmp` (8 grammars,
+all calls queries). Signed binary **2026-10-04 19:56:31 CDT**. New tests:
+hunk parsing (CRLF, Unicode, no-newline, pure add/delete, binary, headers
+after CRLF content), raw/numstat records (rename R099, delete), line maps,
+gh JSON decoding, command timeouts, a local-origin Git fixture (fetch by
+SHA without touching the attached clone, name-status/counts/hunks, Before
+blobs, worktrees, blob ids, eviction), digest rules, reuse/regeneration/
+Partial with a fake indexer, legacy format-2 rejection, and an AppModel
+flow: open PR, After highlights `[6..<12]`, changed callables `b`,`c`,
+toggle to Before at the mapped line, Back to the After caret, deleted and
+renamed files, search hits forcing After, superseded loads, repository
+switch mid-load, Local Checkout. A main-actor starvation (git fixtures) and
+a `\r\n` grapheme bug in the parser were found by the full suite and fixed.
+
+Real data (read-only, `RADIOLOGY_REAL_PR_PROBE=1 swift test --filter
+PullRequestRealDataProbe`, temporary cache, tkos status/HEAD verified
+unchanged): `tktkinc/tkos`, 25 recent PRs (9 open, 15 merged, 1 closed,
+newest #734). **#724** had merged since the root's preflight: head
+`f11c99e3d6`, merge base `488d8768d5`, 9 files (7 M, 2 A), fetch 1.3 s;
+`DesktopRuntimeSession.kt` removed lines `[3..<5, 11..<64]`, 238 → 183
+lines, After anchors `[3, 9]`; `RuntimeSmoke.kt` 17 hunks +117 −205; 16
+strategies at head, 15 byte-identical to the merge base (would reuse).
+**#723** merged, head `f4082f9e3a`, 12 files (5 M, 5 A, 2 D). **#725**
+open, head now `3dd325f6b0`, 744 files (390 M, 336 A, 11 D, 7 R, incl.
+`SegmentedJournal.kt` renamed and modified). The app's own index of the
+head worktree was not generated in this round (no rust-analyzer run on a
+snapshot); the reuse path is proven by tests, not by a tkos timing.
+
+Not verified: any UI. Sol's checks: menu/sheet flows and errors (gh missing,
+unknown number), Changes list and dots, gutter/wash in both revisions and
+dark mode, Before/After control states (Added/Deleted/Unchanged/Renamed/
+Binary), ⌥⌘B and ⌘[ round trip, ⌥⌘↓/↑, window subtitle, Local Checkout,
+footer `Not Indexed (Before)`, index popover "Reused from …" rows, and that
+the first review's indexing (regeneration of changed projects) stays
+cancellable and never blocks reading. RADIO.png icon preserved; no commits,
+pushes, tkos writes, or GitHub writes.
+
+## 2026-10-04 — Function-first outline by source size
+
+Ordinary Outline now surfaces all callable declarations, including methods and
+nested functions, before non-callable declarations. Functions sort descending
+by true signature-to-end line span, source-order ties, using half-open UTF-8
+ranges. Original symbols/IDs preserve selection and navigation. Non-callables
+remain in a native Declarations hierarchy without duplicated functions.
+One-line body names use middle truncation; quiet `n L` trailing counts use the
+existing metadata role with tabular digits, full help and accessibility labels.
+Cached derivation refreshes on source/syntax paths, content identity and symbols,
+including switches between identical-content files. Normal/Critical share this
+outline; source-order context/gutter and removed lens sidebar content are unchanged.
+
+Gates: make check, **169 tests / 34 suites**, swiftbuild signed bundle, strict
+deep codesign, empty-env resources from /tmp (8 grammars/all calls queries).
+Signed binary **2026-10-04 17:35:04 CDT**. New regressions cover flattening,
+span ordering/ties, nested non-callable access, Unicode/half-open endings and
+identical-content path invalidation. Existing navigation tests pass.
+Native attachment selected the user's old app.rs reader instead of the fresh
+app_image instance. Stopped immediately without clicks/recovery; terminated only
+review PID 79127, leaving user PID 24145, pins and marks alone. No new live
+outline evidence or screenshots; previous hover physical-click limitation remains.
+See plans/critical-lens-ui-review.md for manual checks. No tkos writes/commits/pushes.
+
+## 2026-10-04 — Hover popup click targets and native retention repair
+
+The user reported unclickable symbol popups. Source inspection found the custom
+Critical NSPopover is the only source-symbol popup: titles/call names were Text,
+with only small trailing links actionable. Navigable titles and whole rows are
+now semantic Buttons; external/missing targets remain unavailable. Stable
+observable content avoids hosting-root replacement during loading. Native
+full-area activeAlways tracking, a source→popup transit region and 700ms grace
+retain entry; crossing tokens while inside cannot replace the popup. Existing
+exact-caret definition/Back path remains. No sidebar lens depiction restored.
+
+Actual final gates: check, **166 tests / 33 suites**, swiftbuild signed build,
+strict deep codesign, empty-env 8-grammar resources. Binary **17:21:39**. Native
+host/event/transit regressions and model destination/Back tests pass. Live
+click verification was blocked: the native tool selected the old app.rs:316
+reader despite a separate fresh app_image review instance; single full-path
+recovery did the same. Stopped, terminated only the review process, preserved
+the user's reader/pins/marks. No popup screenshots or physical click evidence;
+[review](plans/critical-lens-ui-review.md) has exact manual steps and limits.
+No tkos writes, commits/pushes; RADIO.png and aggressive rendering preserved.
+
+## 2026-10-04 — Remove Critical Lens sidebar depiction
+
+GPT Sol implemented the user's focused removal: no upper Critical calls/status/
+unknown/conditional/frontier section, lower callable frontier, or outline density
+counts. Normal and Critical now share the concise declaration/references and
+Definition/outline sidebar with existing disclosures/navigation. No replacement
+summary. Call-focused source, mode control, persistent marks, hover frontier and
+source gutter counts remain. Sidebar-only components/tasks/state/row dispatch
+were removed; gutter work visits only fold-bearing callables and pointer dwell
+retains on-demand hover computation/priming.
+
+Meaningful regressions verify mode-independent context/reference identities,
+selection/disclosures and activation/Back, no new graph requests on caret moves,
+no outline-only annotation work, and surviving hover/gutter behavior. Actual
+final gates pass: make check, **164 tests / 32 suites**, make build swiftbuild,
+strict deep codesign, env-i resources from /tmp (8 grammars). Signed binary
+**2026-10-04 17:05:05**. No native relaunch/check was attempted while the user
+was browsing the shared reader; no new screenshots or visual claims. See
+[the review](plans/critical-lens-ui-review.md). README/design contracts updated;
+earlier automatic sidebar/count descriptions are superseded. RADIO.png/icon
+pipeline and tkos data preserved; no marks changed, commits or pushes.
+
+## 2026-10-04 — Critical Lens call-focused rendering, user accepted
+
+The user superseded protecting syntax/literals/locals at full contrast: only
+actual call names should pop. GPT Sol implemented a complemented Tree-sitter
+call-name projection: critical/unknown calls remain prominent, proven ordinary
+calls and all non-call source recede. Unresolved syntactic names never create
+semantic identities/edges; unindexed files can render when call syntax exists.
+Context opacity is 30% light / 38% dark; Normal and drawing-only coordinate/
+reader contracts remain intact. RADIO.png/icon generation preserved.
+
+Actual native attachment succeeded. Same-viewport Normal/Critical captures of
+read-only tkos `app.rs:115–139 execute_future` visibly show quiet strings,
+control words, declarations, receivers/locals/types and a call-name foreground;
+existing pins and line tint survive. Upper concise Critical call names and
+independent lower Definition were observed. Separately the user said “this is
+much better”, accepting the aggressive rendering. Live work stopped when the
+shared reader was being used, rather than compete. No marks changed. Dark mode,
+new mark toggle, hover navigation/Back and folded-count semantics remain
+unverified. [Review and actual artifacts](plans/critical-lens-ui-review.md).
+
+Final actual gates: make check, **163 tests / 32 suites**, make build swiftbuild,
+strict deep codesign, empty-env packaged resource verification (8 grammars).
+Signed binary **2026-10-04 16:53:36**. Rendering tests replaced obsolete syntax-
+protection assertions and cover Unicode/non-call/ordinary/unknown distinctions;
+a timing-sensitive pre-existing cache test now prepares parsed bytes before
+its artificial-delay race (assertions unchanged). No production graph changes,
+tkos writes, commits or pushes.
+
+The parent preserved the supplied screenshot and both native comparison
+captures under `build/critical-lens-ui-review/call-focus/`, verified review
+links, and confirmed tkos Git status still exactly matches the starting status.
+Only evidence/documentation changed after Sol's final gates.
+
+## 2026-10-04 — App icon from RADIO.png
+
+The supplied root `RADIO.png` is now the app-icon source. The icon script
+resizes the complete artwork into the ten standard macOS variants without
+cropping or added decoration; Make tracks both the PNG and script so future
+changes regenerate `build/AppIcon.icns`. Info.plist already points at AppIcon.
+The rebuilt signed bundle (binary copy timestamp **16:42:51**) includes the
+new ICNS and was registered with LaunchServices. The original PNG is unchanged.
+
+Validation: `make build`, `make check`, **161 tests in 32 suites**, strict deep
+codesign, and packaged resource verification from `/tmp` with `env -i` all
+pass. The bundled icon matches the generated file exactly and decodes into
+ten variants spanning 16–1024 pixels; the generated 512-pixel artwork was
+visually checked. No new tests were added for this asset change. No application
+source changed, and no native UI test was attempted; the preceding Critical
+Lens final-UI limitations remain. See [the build guide](plans/build-system.md)
+for the asset pipeline. Nothing was committed or pushed.
+
+## 2026-10-04 — Critical Lens final native acceptance blocked
+
+GPT Sol launched the signed **16:19:59** build on untouched tkos. Native attachment failed with `Computer Use server error -10005: cgWindowNotFound`; the single full-app-path recovery failed identically. UI work stopped within the requested budget. No final screenshot/AX evidence, source fixes, tests or rebuild; reported 161 tests / 32 suites and signing/resource gates remain separate evidence. Original absent override state was snapshotted and unchanged. Stage-one visual acceptance stands; final summaries/frontier/hover/counts remain unverified. [The review](plans/critical-lens-ui-review.md) has exact manual cases and screenshot requests; do not call the full milestone visually accepted yet.
+
+The parent confirmed tkos Git status exactly matches the starting status and
+independently reverified strict deep signing. Stage-one captures remain
+preserved under `build/critical-lens-ui-review/stage1/`; no final captures
+exist. PLAN, implementation design, and handoff now record the blocked final
+review and manual checks. Only documentation changed after the build; no
+product code changed and the passing suite was not rerun. Nothing was
+committed or pushed. The final app is left available for manual inspection.
+
+## 2026-10-04 — Critical Lens, stages two and three: summaries, frontier, sidebar, hover, counts
+
+The user handed source ownership back after Sol's successful stage-one
+review and asked for the rest of the milestone in one turn. Fable 5.1
+implemented it; no UI was launched by the implementer. Details in
+[plans/critical-lens.md](plans/critical-lens.md) §5–§8.
+
+- **Call sites:** a fifth query role, `calls`, for all eight grammars.
+  Named shapes carry the callee token; a fallback over every call node
+  keeps unsupported shapes (`(f)(x)`) as unresolved sites. Sites inside
+  closures and nested named functions belong to those nodes and never
+  become the outer function's edges.
+- **Edges:** a site is an edge only when its callee token is a SCIP
+  occurrence (`CallGraphWorker.resolve`); never by spelling. rust-analyzer
+  emits no relationships, so this is the only edge source. Bodies are
+  located by the Tree-sitter declaration at the definition byte, with the
+  indexer's enclosing range as a bounds-only fallback.
+- **Frontier:** bounded BFS (depth 4, 48 bodies). Critical emits, ordinary
+  with a body traverses transparently as a via step, unknown is listed and
+  makes coverage partial, closures make it partial too. Cycles,
+  self-recursion, and diamonds terminate; the first path wins; the count
+  is the distinct union of direct and frontier callees.
+- **Coverage:** complete, partial (unresolved, macros, missing bodies,
+  truncated, parse errors, unknown callees, conditional sites), or no body
+  (external, abstract, no syntax, unreadable, not indexed, unsupported).
+  Proven zero requires complete coverage.
+- **Caches:** worker configured by root/index/policy revisions with a work
+  epoch advanced on reconfiguration and on byte invalidation; in-flight
+  operations never store stale results; a disk load that finishes after
+  the same path was primed yields to the primed bytes. Review findings on
+  prime ordering, dependent frontiers, mid-operation reconfiguration, and
+  unknown/conditional proven-zero were each fixed with a regression.
+- **Sidebar:** Critical mode puts a **Critical** section ahead of the
+  reference list: status line, direct critical calls, frontier rows with
+  via chains, unknown/conditional lines; References follow unchanged. The
+  lower Definition row gains a compact bounded frontier for callables.
+  Requests follow the two Context identities, never a caret timer.
+- **Hover:** automatic popover after 350 ms on a callable with a body or a
+  critical external callable; stays open while the pointer moves into it;
+  closes on leaving, click, key, scroll, mode/file/index/repository
+  change. Rows navigate through the exact-caret history path; external
+  rows say "external" and do nothing.
+- **Gutter and outline:** collapsed functions show the reachable count in
+  an accent-stroked rounded square (`3`, `3+`, `–`) instead of the neutral
+  hidden-line capsule, which stays in the tooltip/accessibility; outline
+  rows get a trailing caption count in source order. Both are generic
+  `CountAnnotation` values; the gutter and reader know nothing about
+  classification.
+- **Real tkos (read-only probe):** `restore_app`→`restore` direct,
+  complete; with `restore` marked ordinary (probe-local): `section via
+  restore` and `compatibility via restore`, section's three sites collapsed
+  to one path, partial (6 unresolved dependency calls, 2 macros).
+  `read_observation`: `observe_session`, complete. `publish_instructions`:
+  6 direct critical, 7 closure sites, 5 unknown, partial. `open`: 39 direct
+  critical, 23 closure sites, partial. Marks were never persisted.
+- **Tests:** `CallSiteExtractionTests` (4), `CriticalFrontierTests` (3),
+  `CallGraphWorkerTests` (5), `CriticalSummaryModelTests` (3); the Rust
+  fixture and synthetic graphs cover ownership, dynamic sites, dedup,
+  caps, invalidation, and reconfiguration races.
+- **Gates:** `make check`, **161 tests in 32 suites** via `make test`,
+  `make build` (swiftbuild), `codesign --verify --deep --strict`, and
+  packaged `--verify-resources` from `/tmp` with `env -i` (8 grammars, now
+  `highlights+folds+symbols+scopes+calls`) all pass. Binary
+  `build/Radiology.app/Contents/MacOS/Radiology` built 2026-10-04 16:19:59.
+- **Live check pending (Sol).** Short checks on untouched tkos:
+  1. `engine/rust/src/app_image.rs`, caret inside `restore_app` (401),
+     Critical: the upper region's Critical section lists `restore` →
+     line 404; References follow. Caret into `restore` (404): `section`
+     ×3 and `compatibility` rows, status "2 direct · partial"; expanding
+     nothing is needed to read the names. Return on a row jumps; ⌘[
+     returns to the caret.
+  2. Right-click `restore` → Mark “restore” ▸ Non-Critical: `restore_app`'s
+     section now shows `section via restore` and `compatibility via
+     restore` with the chevron revealing the chain; Built-In restores.
+  3. Hover `section` on line 413 (no modifier): after a beat a popover
+     with "section", Definition link, "0 direct · proven"; move the pointer
+     into the popover, click Definition: jump; ⌘[ back. Hover `ok_or` or
+     a local: no popover. Hover `libc::flock` in
+     `modules/agent/ffi/src/store_owner.rs:48`: popover says "external",
+     no link, no navigation.
+  4. Collapse `restore` (gutter): the count lane shows `2+` in an
+     accent-stroked square; tooltip includes the hidden-line count; expand
+     and the normal capsule returns in Normal mode. Outline rows show
+     trailing counts in source order; a proven-zero row reads a quiet `0`.
+  5. `modules/agent/ffi/src/app.rs`: caret in `open` (1343): the Critical
+     section lists `optional_string`, `bad`, `prepare_catalog`, … with a
+     "23 calls in closures" line and "partial" status; scrolling the list
+     stays responsive while the gutter counts fill in.
+  6. ⌘1: Critical section, popover, and counts disappear; references and
+     Definition are exactly as before. Dark mode legibility of the gutter
+     badge and popover.
+
+## 2026-10-04 — Critical Lens stage-one native UI checkpoint
+
+GPT Sol reviewed the signed **15:43:16** build on read-only tkos through native Computer Use. Actual on-screen dimming worked; repository/system operations remained prominent, unresolved dependencies neutral, and syntax/caret/function shade legible. Cmd1/Cmd2 preserved observed caret, viewport, word selection, existing folds and history. Native copy of a dimmed token worked. Symbol/package mark precedence worked in opposing directions, with persistence across relaunch; the original absent repository override file was restored after stopping the review app. No source changes or rebuild; handed-off gates remain 146 tests / 28 suites. Light-mode contrast accepted as-is. Dark mode, pin overlays and other explicit coverage limits remain unverified, not failures. See [the native review](plans/critical-lens-ui-review.md) for actual screenshots and stage-two handoff. Fable can resume summaries/call graph/frontier before hover/gutter/outline counts.
+
+## 2026-10-04 — Critical Lens, stage one: classification, marks, Critical source rendering
+
+The user asked for a Critical Lens source projection for skimming meaningful
+operations, in stages. Fable 5.1 wrote the system design
+([plans/critical-lens.md](plans/critical-lens.md)) and implemented stage one
+only. GPT Sol owns the live UI check; the implementer launched nothing.
+
+- **Measured first (read-only tkos cache, 13 rust-analyzer 1.97.1
+  strategies):** rust-analyzer emits **no** SCIP relationships, so there are
+  no call edges in the index; `enclosing_range` exists on every indexed
+  definition (whole item) and `enclosing_symbol` on every local; external
+  symbols (`core`, `std`, `serde_json`, `libc`…) carry no kind or signature,
+  only their symbol string; operators, `?`, brackets, and even spaces are
+  `core ops/…` occurrences; 222 repository signatures contain `extern`.
+  Opt-in probe: `RADIOLOGY_CONTEXT_PROBE=<cache> swift test --filter
+  CriticalRealDataProbe`.
+- **Mode:** `SourceMode` (`normal`, `critical`), a segmented
+  Normal | Critical control in the toolbar's principal position, and View
+  menu items with ⌘1 / ⌘2. Per session, not persisted.
+- **Classification** (`Critical/CriticalityPolicy.swift`): deterministic
+  precedence — symbol mark, package mark, local → unknown, explicit
+  binding-package list or `ffi/`/`os/` descriptors → critical, indexed
+  `extern "` signature → critical, system-facing std/tokio modules →
+  critical, repository definition or repository package → critical,
+  `core`/`alloc`/`std` → ordinary, else unknown. No spelling heuristics; a
+  `-sys` suffix alone proves nothing; raw-pointer/`mem` helpers are not
+  promoted. Only the rust-analyzer scheme has profiles.
+- **Real tkos results** (probe, classification level): in `restore`
+  (app_image.rs:404–425) `section`, `compatibility`, `MAGIC`, `MAX_IMAGE`,
+  `Restored`, `Error` are critical; `Vec`, `Result`, `len`, `split_at`,
+  `Err`, `into`, `Some`, `format`, `as_str`, `is_empty`, `BTreeMap`,
+  `String` are ordinary; `serde_json::from_slice` and `Sha256::digest` have
+  no occurrence (engine is `--no-deps`) and stay untouched. In
+  store_owner.rs:41–49 `OpenOptions::open` is systemAPI, `libc::flock`,
+  `LOCK_EX`, and `as_raw_fd` are ffiPackage, `io::Error::last_os_error` is
+  plumbing (excluded `io/error/` module). In app.rs `open`, `optional_string`,
+  `bad`, `HarnessError` are critical, `first`/`and_then`/`cloned`/
+  `unwrap_or_default` ordinary, `serde_json::Value::as_object` unknown.
+- **Marks:** source context menu → `Mark “name” ▸ Critical / Non-Critical /
+  Built-In (…)` and `Mark Package “pkg” ▸ …` with radio state. Symbol beats
+  package beats built-in. Locals are never offered or stored (their SCIP
+  numbers are renumbered by reindexing). Package keys are
+  `scheme manager name` without version. Persisted atomically at
+  `~/Library/Application Support/Radiology/overrides/<repo-id>.json`,
+  keyed like the index cache; the viewed repository is never written.
+  Edits made before the file loads are replayed on top of it; saves are
+  chained and revision-guarded; deletion failures surface as “Marks not
+  saved” in the footer.
+- **Rendering:** `SourceProjection` (sorted, merged canonical byte ranges
+  bound to the buffer's path and full content identity). Only ordinary,
+  non-definition, single-line, identifier-shaped occurrences that touch no
+  Tree-sitter keyword/literal/comment/operator capture recede; a file with
+  a grammar waits for its structure. The coordinator's
+  `shouldUseTemporaryAttributes` hook returns the text storage's own color
+  at 42 % (light) / 50 % (dark) opacity: no storage mutation, no layout,
+  no coordinate change; copy, Find, selection, pins, shade, caret, folds,
+  history, and scroll are untouched. Caret moves cost one key comparison.
+- **Tests:** `CriticalityPolicyTests` (3), `CriticalProjectionTests` (2,
+  including an ordinary occurrence over `await`/`true`/`return`),
+  `CriticalityOverrideStoreTests` (2), `CriticalLensModelTests` (3, through
+  `AppModel` with the fake indexer), `SourceProjectionDrawingTests` (3).
+  TextKit ignores temporary attributes offscreen, so a pixel test is
+  impossible by design; the hook's outputs and its consultation on every
+  draw pass are tested instead.
+- **Gates:** `make check`, **146 tests in 28 suites** via `make test`,
+  `make build` (swiftbuild backend), `codesign --verify --deep --strict`,
+  and packaged `--verify-resources` from `/tmp` with `env -i` (8 grammars)
+  all pass after the final `io/error/` profile fix. Binary
+  `build/Radiology.app/Contents/MacOS/Radiology` built 2026-10-04 15:43:16.
+- **Not done (stage two/three, designed only):** function summaries, call
+  graph from Tree-sitter call sites resolved to SCIP (closure and nested
+  function sites are their own conditional nodes, never direct edges of the
+  outer function), frontier with via paths, identity-driven sidebar
+  summaries, hover popover, fold-gutter and outline counts.
+- **Checks for Sol (live, untouched tkos):** 1. open
+  `engine/rust/src/app_image.rs`, place the caret in `restore` (line 404),
+  switch to Critical (toolbar or ⌘2): `section`, `compatibility`, `MAGIC`,
+  `Restored`, `Error` stay full; `Vec`, `Result`, `len`, `Err`, `into`,
+  `Some`, `format`, `BTreeMap`, `String` recede; `if`, `return`, `?`,
+  braces, strings, `serde_json::from_slice`, `Sha256::digest`, locals stay
+  full. 2. `modules/agent/ffi/src/store_owner.rs:41–49`: `open`, `libc`,
+  `flock`, `LOCK_EX`, `as_raw_fd` full; `PathBuf`, `from`, `map_err`
+  receded; `unsafe` full. 3. Arrow through a receded token: caret, Context
+  rows, and the function shade behave as in Normal; ⌘-hover underline and
+  ⌘-click still work on receded and full tokens; Return/⌘[ unchanged;
+  select and copy a receded span: plain text. 4. Fold `restore`: no
+  stacked artifacts; unfold: dimming intact. 5. Right-click `len` → Mark
+  “len” ▸ Critical: it returns to full at once; Built-In restores; Mark
+  Package “alloc” ▸ Critical: `Vec`/`String`/`format` return; relaunch and
+  reopen tkos: marks persist; open another repository: none apply.
+  6. ⌘1 returns to Normal with no residue; toggle rapidly while scrolling.
+  7. Dark mode legibility of receded text (50 %). 8. Confirm no file
+  appears in tkos and the JSON exists under
+  `~/Library/Application Support/Radiology/overrides/`.
+
+## 2026-10-04 — Faint shade under the current function
+
+The user asked: "put a subtle background shade under the current function that
+i'm visiting, just enough to notice if i'm looking for it." Opus 5.5
+implemented it. See
+[structural navigation](plans/structural-navigation.md#current-function-shade).
+
+- **Which function:** the innermost Tree-sitter function, method, initializer,
+  or deinitializer around the genuine caret, from signature to end. Not
+  types, `impl` blocks, or modules. Closures keep their named function.
+- **When it clears:** outside functions, on a file or repository change, and
+  without structure. Scrolling never moves it.
+- **Drawing:** full-width bands from TextKit line fragments, painted first in
+  `drawBackground`. Line tint, highlights, pins, and caret stay on top. Folds
+  collapse it to the visible line. Only the visible slice is mapped to glyphs,
+  after source review.
+- **Color:** `labelColor` at 3% (light) or 4.5% (dark).
+- **Tests:** new `FunctionShadeTests` (3). They found and fixed a missing clear
+  on repository open.
+- **Gates:** `make check`, **132 tests in 22 suites** via `make test`,
+  `make build`, strict deep codesign, and packaged `--verify-resources` from
+  `/tmp` with an empty environment (8 grammars) all pass. Binary
+  `build/Radiology.app/Contents/MacOS/Radiology` built 2026-10-04 15:02:16.
+- **Live check:** GPT Sol verified the faint wash in light mode on untouched
+  tkos: `section` shades lines 93–101, stays stable during caret movement,
+  clears on blank line 102, and transfers to `sources`. Folding and adjacent
+  `restore_base`/`restore_app` boundaries work. Pins, current-line tint,
+  symbols, and the caret stay legible. Passive scrolling does not transfer
+  the shade to the viewport's function. No defect was observed; dark mode
+  was not tested. See [Sol's review](plans/context-ui-review.md); screenshots
+  are preserved in `build/context-ui-review/function-shade/` (removed by
+  `make clean`). No UI launch by the implementer; no commits or pushes.
+
+## 2026-10-04 — Subtle caret in the read-only source reader
+
+The user asked: "i need to see a cursor, not just the current line (a caret
+would be great, keep it subtle) because some lines have multiple syms and i
+don't want to have to mouse to get to them sometimes." Opus 5.5 implemented it.
+See [structural navigation](plans/structural-navigation.md#read-only-source-caret).
+
+- **Approach:** the reader stays read-only. AppKit draws no insertion point for
+  a non-editable text view, so `ReaderTextView` paints one.
+- **Style:** a 1.5 pt steady bar in the dynamic system insertion-point color at
+  85% opacity. Its height spans the font's ascender to descender on the real
+  baseline. It is painted last in `drawBackground`, above line tint and
+  decorations. No blink, no timers.
+- **Geometry:** from actual TextKit glyphs, covering tabs, emoji, ZWJ and
+  combining clusters, line ends, EOF (including after a final cluster), and
+  none inside folds.
+- **Gating:** shown only in the focused key-window reader with an empty
+  selection.
+- **Fixes found during the work:**
+  - Trailing UTF-16 units of clusters carry null placeholder glyphs, so the
+    caret snaps to the start of the composed character.
+  - The EOF case after a final cluster (found in source review) now uses the
+    complete glyph span.
+  - An initial `draw(_:)` override changed scroll-restoration behavior, so it
+    was replaced by painting in `drawBackground`.
+- **Tests:** `SourceCaretTests` (3), with mutation checks for the EOF fix and
+  the gate.
+- **Gates:** `make check`, **129 tests in 21 suites** via `make test`,
+  `make build`, strict deep codesign, and packaged `--verify-resources`
+  (empty environment, 8 grammars) all pass. The signed app is
+  `build/Radiology.app`.
+- **Live check:** GPT Sol verified the caret on tkos `app_image.rs:94`:
+  arrows moved it from `input` to `prefix`, updating the lower Context row
+  while the upper declaration/references stayed fixed. Word selection and
+  sidebar focus hid it; it reappeared above pinned tint. Source Return/Back
+  still worked at `section:413`. Concise default rows and the Definition
+  heading were also observed. No new defect was found. Dark mode and Unicode
+  edge cases were not exercised live; the latter have model-test coverage.
+  Evidence is in [Sol's review](plans/context-ui-review.md), with captures
+  preserved under `build/context-ui-review/caret/` (removed by `make clean`).
+  No UI launch by the implementer; no commits or pushes.
+
+## 2026-10-04 — Concise Context default: one line per item, expansion on demand
+
+The user asked: "just show a single line for each, and then have an expansion
+affordance to show more… keep the DEFAULT information layout in the sidebar
+concise," and "lose 'under caret', too explainy." Opus 5.5 implemented it. See
+the concise-default section of [plans/context-sidebar.md](plans/context-sidebar.md).
+
+- **Declaration region:** one pinned line (name, kind, line link), with the
+  signature behind a native disclosure triangle. References and definitions
+  are one line each, with a row chevron or →/← to show context. The automatic
+  selection preview is gone. ↑/↓ selects, Return commits.
+- **"Definition" region** (formerly "Under Caret"): one line of name, kind, and
+  location link, `here`, or package. The triangle reveals signature, docs,
+  facts, and the preview.
+- **Statuses:** one short line each, with full reasons in tooltip and
+  accessibility.
+- **Expansion state:** tied to identities in `ContextModel`. It starts
+  collapsed, survives movement within an identity, collapses on a new one,
+  and never navigates.
+- **Tests:** a new expansion-identity test, plus disclosure toggling in the
+  passive no-navigation test.
+- **Gates:** `make check`, **126 tests in 20 suites** via `make test`,
+  `make build`, strict deep codesign, and packaged `--verify-resources`
+  (empty environment, 8 grammars) all pass. The signed app is
+  `build/Radiology.app`.
+- **UI boundary:** GPT Sol launched the fresh signed build, but native access
+  returned `Computer Use server error -10005: noWindowsAvailable` during the
+  line94/source-click sequence. He stopped immediately without retry or
+  workaround, per user instructions. Compact layout and disclosure interaction
+  remain unverified; no new screenshot or product defect was observed. Exact
+  manual checks are in [Sol's review](plans/context-ui-review.md): capture
+  collapsed and expanded rows at normal and 220-point widths, selection without
+  automatic preview, reference Return/Back, and independent expansion resets.
+  Earlier successful live reviews cover earlier builds only. No UI launch by
+  the implementer; no commits or pushes.
+
+## 2026-10-04 — Return/Enter in the source reader goes to definition
+
+The user asked: "hitting enter when highlighting a funcall's symbol should just
+take us to the definition. presumably cmd-[ should take us back to where we
+were." Opus 5.5 implemented this as a narrow AppKit route in
+`ReaderTextView.keyDown`. Details are in
+[plans/context-sidebar.md](plans/context-sidebar.md).
+
+- **Trigger:** plain Return or keypad Enter in the focused source reader. It
+  works with the caret inside a SCIP occurrence or just past it, or with a
+  word selection inside one occurrence.
+- **Path:** it calls `goToDefinition(at:departingFrom:)`, the same semantic path
+  as ⌘-click. ⌘[ restores the exact departure caret, even after passive
+  scrolling.
+- **Pass-through:** modified keys, marked text, whitespace, unindexed files,
+  external symbols, the definition itself, and over-wide selections go to
+  AppKit unchanged. Nothing is guessed. Selection, copy, pins, and the
+  sidebar's Return behavior are untouched.
+- **Tests:** new `ReaderReturnKeyTests` (2), driving the real `keyDown`.
+  Removing the modifier or selection-bound guards made them fail.
+- **Gates:** `make check`, **125 tests in 20 suites** via `make test`,
+  `make build`, strict deep codesign, and packaged `--verify-resources` from
+  `/tmp` with an empty environment (8 grammars) all pass. The signed app is
+  `build/Radiology.app`.
+- **Live check:** GPT Sol verified source-focused Return from `section` at
+  `app_image.rs:420` to its definition at93 after passive scrolling; Cmd-[
+  restored the call site. Native word selection also worked. Cross-file
+  Return on `runtime.rs:145` `restore_app` reached `app_image.rs:401`, with
+  Back restoring145. Sidebar Return still committed reference276, and
+  external `Some` did not navigate. No new defects or tooling blockers.
+  Exact token-end byte placement was only partially verified visually; unit
+  tests cover that boundary. Evidence and screenshots are in
+  [Sol's review](plans/context-ui-review.md) and
+  `build/context-ui-review/return-key/`. No UI was launched by the implementer.
+  No commits or pushes.
+
+## 2026-10-04 — Context inspector repairs and GPT Sol live review
+
+Opus 5.5 implemented the feature and all fixes. GPT-6.1 Sol exclusively
+exercised the native UI and inspected the design against untouched tkos.
+This entry supersedes the pending live-review status in the implementation
+entry below. See [the implementation plan](plans/context-sidebar.md) and
+[Sol's review](plans/context-ui-review.md).
+
+- **Final gates:** `make check`, **123 tests in 19 suites** via `make test`,
+  `make build`, strict deep codesign, and packaged `--verify-resources` from
+  `/tmp` with an empty environment all pass (8 grammars). Signed app:
+  `build/Radiology.app`. No commits or pushes.
+- **Live behavior:** Sol verified read-only caret arrowing, independent lower
+  context, whitespace outline fallback, reference selection/Return,
+  definition-link and Tab/Return navigation, Back after passive scrolling,
+  pins, narrow inspector layout, external-source availability, and file-change
+  clearing. The shared type hierarchy and native split/list design were judged
+  coherent.
+- **Four repairs from that review:** preserve multiline signature height;
+  keep call-site snippets visible at compact heights; use Tree-sitter's
+  declaration boundary for cross-file definition previews; distinguish
+  repository-without-index from file-not-indexed. Added meaningful regression
+  coverage for adjacent declarations and availability. Fixed an older test
+  race that waited on a placeholder repository status.
+- **Recheck:** the rebuilt app visibly shows all seven `open` signature lines
+  when space permits, numbered reference snippets at default/enlarged heights
+  and a condensed call site at a short 220-point inspector, and only lines
+  401–403 for `restore_app`. Definition activation and Back still work.
+- **Manual boundary:** after the one recovery retry, ScreenCaptureKit failed
+  with `-3812`. UI work stopped without another workaround, as requested.
+  Open root `README.md` and screenshot **File not indexed** beside Outline
+  with **Index Partial** in the footer. The wording repair has test evidence
+  but was not observed on the final build. Cmd-click, contextual activation of
+  an unselected row, long-list scroll retention, VoiceOver speech, and dark
+  mode remain unverified; exact steps and other limits are in Sol's review.
+- **Evidence:** original and recheck captures are preserved under
+  `build/context-ui-review/initial/` and `build/context-ui-review/recheck/`.
+  These are local build artifacts and are removed by `make clean`.
+
+## 2026-10-04 — Context inspector implemented (Opus 5.5); live UI review pending
+
+This round supersedes the authentication-blocked note below. Claude
+authentication was restored, and Opus 5.5 implemented the caret-driven Context
+inspector. Full detail is in [plans/context-sidebar.md](plans/context-sidebar.md).
+
+- **Inspector:** the Outline/Symbol toggle and `SemanticInspectorView` are
+  gone. A `VSplitView` holds two regions:
+  - **Declaration:** the innermost Tree-sitter declaration. Its pinned summary
+    shows name, kind, flush signature, and a Line link. Ambient SCIP references
+    follow, grouped by file. The count covers uses only, and definitions are
+    labelled.
+  - **Under Caret:** the SCIP occurrence with signature and docs. Calls and
+    types get a bounded preview; locals stay quiet. External symbols are
+    honestly explained.
+  - **Outline fallback:** on whitespace, keywords, imports, and anything
+    without a semantic occurrence.
+- **No debounce:** `ContextModel` is keyed on declaration and occurrence
+  identities. It writes observable state only on identity change, and uses
+  generation-checked, cancelled off-main queries on separate actors. Caches are
+  bounded and invalidated by index, repository, and source-byte changes.
+- **Genuine caret:** `AppModel.caretLocation` is separate from the
+  viewport-mixed `positions`.
+  - Scrolling never changes context.
+  - Every sidebar activation records the caret as Back's departure: reference
+    commit, the definition link or Return, and the declaration Line link.
+  - Reference ↑/↓ shows a capped call-site preview below the list. Return,
+    double-click, or Open commits the named row.
+- **Fixes found on real data:** SCIP fallback names inside backtick-escaped
+  `[...]` descriptors (`first` from core read as `]first().`); URL version
+  fields in package names; multiline signatures of nested methods.
+- **Fixes from parent review:** caret vs scroll departure, the true definition
+  list on definitions, and honest reference counts.
+- **Fixes from Sol's source-only review:**
+  - native actions commit their own row ID;
+  - snippet accessibility values contain the source;
+  - the preview is capped and scrolls, preserving list room;
+  - the summary is pinned above the list;
+  - long names get stacked metadata;
+  - a visible "Preview · Return opens" hint.
+- **Validation:**
+  - `make check`, **120 tests in 19 suites** via `make test`, signed
+    `make build`, strict codesign, and packaged `--verify-resources` (8
+    grammars from `/tmp`, empty environment) all pass.
+  - New: `ContextModelTests` (15), `ContextNavigationTests` (7), and the opt-in
+    `ContextRealDataProbe`.
+  - Mutation checks confirmed that the caret-departure and identity-guard tests
+    fail when those guards are broken.
+  - Real tkos resolution used the existing app-owned cache (tkos `239b9f6d4`,
+    read-only). Results are recorded in the plan.
+- **Not done here:** this agent did no live launch, UI automation, or visual
+  inspection, per instructions. GPT Sol (`31e45a42-9257-445f-a185-70c9b908ebf3`)
+  owns that, and owns `plans/context-ui-review.md`.
+- **Build:** the signed app is `build/Radiology.app`. Nothing was committed or
+  pushed.
+
+## 2026-10-04 — Caret Context sidebar requested; implementation awaiting authentication
+
+The user authorized a new Context inspector with independently updating
+enclosing-declaration/references and under-caret definition/preview regions,
+semantic identity updates without timer debounce, outline fallback, and no
+source navigation until explicit activation. References keyboard movement
+should preview, Return should commit, and Back should restore the departure.
+The explicit model split is **Opus 5.5 for implementation** and **GPT Sol for
+live UI/design review**. The read-only test dataset is
+`/Users/tqbf/codebase/tk/tkos`. If UI inspection becomes complicated, stop
+automation and give the user precise manual checks and screenshot requests.
+
+Started local Paseo implementation agent
+`6195c78d-1734-48ea-b18f-62dceacc6ad0` (`claude/claude-opus-5-5`), but it
+could not start work: "OAuth session expired and could not be refreshed."
+Local `claude auth status` confirms `loggedIn: false`. The user was asked to
+run `claude auth login` on SHEFFIELD, then report readiness for a retry. Do not
+substitute another implementation model silently. No feature code has changed.
+
+GPT-6.1 Sol review agent `31e45a42-9257-445f-a185-70c9b908ebf3` completed
+read-only preparation and awaits a new-build follow-up. Native `@oai/sky`
+imported, but screenshot/AX access is not yet verified. Concrete cases include
+`engine/rust/src/app_image.rs:93` (`section`, with calls at lines 413/420/424),
+`engine/rust/src/runtime.rs:145` (`restore_app`, definition at app_image.rs:401),
+`app_image.rs:19` (cfg-inactive Android symbols), and
+`modules/agent/ffi/src/app.rs:1343` (`open`, multiline signature/large fold) and
+line 4286 (Unicode). Historical reference counts are not fresh expectations.
+UI setup recovery is limited to one simple retry and about 2–3 minutes; no UI
+launch or inspection has occurred in this preparation round.
+
+## 2026-10-04 — Fresh checkout and build on SHEFFIELD
+
+Cloned `tqbf/radiology` into `/Users/tqbf/codebase/radiology` on `main` at
+`2e02ae3`. The first build compiled successfully on macOS 26.5 / Swift 6.3.3
+but failed during packaging: this toolchain defaults to SwiftPM's native
+backend, which creates flat query bundles instead of the expected macOS
+`Contents/Resources` layout. Its generated resource accessor also does not
+search the packaged app's resources.
+
+Used the Paseo skill and CLI over the configured `ssh://elston` alias to read
+the successful Radiology agent's build record, then inspected the remote
+toolchain and generated resources without changing the remote workspace or
+prompting its agents. ELSTON uses Swift 6.4 and the `swiftbuild` backend.
+Updated `build.sh` to explicitly select `swiftbuild` for compilation and binary
+path discovery, preserving the existing signed app layout. Applied the
+SwiftPM guidance and the repository's required `swiftui-pro` review guidance
+before and after the build-script change; no application or UI code changed.
+Documented the backend requirement in `plans/build-system.md`.
+
+Fresh validation passes: `make build`, `make check`, **97 tests in 16 suites**
+via `make test`, strict codesign verification, and packaged resource verification
+for all eight grammars / 31 query files. Resource verification ran from `/tmp`
+with an empty environment; the Swift Build accessor resolves the bundled
+resources instead of falling back to the developer's build directory. The
+debug app is at `build/Radiology.app`. No interactive UI launch was performed.
+The build fix and documentation changes remain local and uncommitted.
+
 ## 2026-10-04 — Git initialization and GitHub publication
 
 The user requested committing the completed project, creating `tqbf/radiology`,

@@ -2,45 +2,49 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppModel.self) private var model
-    @State private var isOutlinePresented = true
+    @State private var isContextPresented = true
+    @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
+    @State private var isPullRequestErrorPresented = false
     var body: some View {
         @Bindable var model = model
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $sidebarVisibility) {
             RepositorySidebar()
                 .navigationSplitViewColumnWidth(min: Theme.sidebarMinWidth, ideal: Theme.sidebarIdealWidth, max: Theme.sidebarMaxWidth)
+                .toolbar(removing: .sidebarToggle)
         } detail: {
             ReaderDetail()
+                .navigationTitle(model.attachedRoot?.lastPathComponent ?? model.repository?.root.lastPathComponent ?? "Radiology")
+                .modifier(ReaderToolbarTitleVisibility())
+                .toolbar(removing: .sidebarToggle)
+                .toolbar {
+                    ReaderToolbar(sidebarVisibility: $sidebarVisibility, isContextPresented: $isContextPresented)
+                }
         }
-        .navigationTitle(model.repository?.root.lastPathComponent ?? "Radiology")
-        .toolbar {
-            ToolbarItemGroup(placement: .navigation) {
-                Button("Back", systemImage: "chevron.left", action: model.goBack)
-                    .disabled(!model.history.canGoBack).help("Back (⌘[)")
-                Button("Forward", systemImage: "chevron.right", action: model.goForward)
-                    .disabled(!model.history.canGoForward).help("Forward (⌘])")
-            }
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button("Toggle Outline", systemImage: "sidebar.right", action: toggleOutline)
-                    .disabled(model.source == nil).help("Show or Hide Document Outline")
-                Button("Go to File", systemImage: "doc.text.magnifyingglass", action: model.showFiles)
-                    .disabled(model.repository == nil).help("Go to File (⌘K or ⌘P)")
-                Button("Go to Symbol", systemImage: "function", action: model.showSymbolSearch)
-                    .disabled(model.repository == nil).help("Go to Symbol (⌘T)")
-                Button("Search Repository", systemImage: "magnifyingglass", action: model.showSearch)
-                    .disabled(model.repository == nil).help("Search Repository (⇧⌘F)")
-                Button("Open Repository", systemImage: "folder.badge.plus", action: model.chooseRepository)
-                    .help("Open Repository (⌘O)")
-            }
+        .inspector(isPresented: $isContextPresented) {
+            ContextInspectorView()
         }
-        .inspector(isPresented: $isOutlinePresented) {
-            InspectorView()
-        }
+        .focusedSceneValue(\.isContextPresented, $isContextPresented)
         .sheet(item: $model.sheet) { sheet in
             switch sheet {
             case .files: QuickFilePicker()
             case .line: GoToLineSheet()
             case .symbols: SymbolSearchSheet()
+            case .pullRequest: PullRequestNumberSheet()
             }
+        }
+        .onChange(of: model.pullRequests.loadError) { _, error in
+            isPullRequestErrorPresented = error != nil
+        }
+        .alert(model.pullRequests.failedRefresh ? "Could Not Refresh Pull Request" : "Could Not Open Pull Request", isPresented: $isPullRequestErrorPresented,
+               presenting: model.pullRequests.loadError) { _ in
+            Button("Try Again") { model.pullRequests.retryFailedReview() }
+            Button("Choose Number…") {
+                model.pullRequests.loadError = nil
+                model.showPullRequestNumber()
+            }
+            Button("Cancel", role: .cancel) { model.pullRequests.loadError = nil }
+        } message: { error in
+            Text(error)
         }
         .dropDestination(for: URL.self) { urls, _ in
             guard let url = urls.first else { return false }
@@ -51,5 +55,4 @@ struct RootView: View {
         }
     }
 
-    private func toggleOutline() { isOutlinePresented.toggle() }
 }

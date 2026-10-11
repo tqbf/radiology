@@ -3,12 +3,20 @@ import AppKit
 /// TextKit navigation needs the final clip-view geometry, after SwiftUI lays out
 /// the representable.
 final class SourceScrollView: NSScrollView {
-    var pendingLocation: Int?
+    var pendingLocation: Int? {
+        didSet { if pendingLocation != nil { pendingViewportCharacter = nil } }
+    }
+    var pendingViewportCharacter: Int?
+    private(set) var isRestoringViewport = false
     override func layout() {
         super.layout()
-        guard let offset = pendingLocation, let text = documentView as? NSTextView,
+        let preservingViewport = pendingViewportCharacter != nil
+        guard let offset = pendingViewportCharacter ?? pendingLocation, let text = documentView as? NSTextView,
               let layout = text.layoutManager else { return }
         pendingLocation = nil
+        pendingViewportCharacter = nil
+        isRestoringViewport = preservingViewport
+        defer { isRestoringViewport = false }
         // Lay out and size the document before scrolling. Otherwise a newly
         // opened file is clamped to its partially laid-out height and the jump
         // lands with the destination at the bottom of the viewport.
@@ -26,7 +34,8 @@ final class SourceScrollView: NSScrollView {
         } else if count > 0 {
             y = layout.extraLineFragmentRect.minY
         }
-        contentView.scroll(to: NSPoint(x: 0, y: y))
+        if preservingViewport { y += text.textContainerOrigin.y }
+        contentView.scroll(to: NSPoint(x: preservingViewport ? contentView.bounds.minX : 0, y: y))
         reflectScrolledClipView(contentView)
     }
 }

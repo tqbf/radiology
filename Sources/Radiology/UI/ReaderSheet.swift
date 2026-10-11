@@ -1,4 +1,4 @@
  enum ReaderSheet: String, Identifiable {
-    case files, line, symbols
+    case files, line, symbols, pullRequest
     var id: Self { self }
 }

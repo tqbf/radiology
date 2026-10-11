@@ -56,6 +56,15 @@ struct OccurrencePinStore: Equatable, Sendable {
         return document.groups
     }
 
+    func retainingDocument(from oldKey: String, to newKey: String, identity: SourceContentIdentity) -> Self {
+        var result = Self()
+        if let document = documents[oldKey], document.sourceIdentity == identity {
+            result.documents[newKey] = document
+            result.nextColorSlot = nextColorSlot
+        }
+        return result
+    }
+
     /// Returns true when pinned and false when an existing group was removed.
     @discardableResult
     mutating func toggle(_ group: OccurrenceGroup, path: String,

@@ -69,7 +69,7 @@ help:
 	@echo "  test              Run the SwiftPM test suite"
 	@echo "  release           Build release into ./$(APP)"
 	@echo "  run               Build and launch $(APP_NAME)"
-	@echo "  icon              Regenerate build/AppIcon.icns from scripts/make-icon.swift"
+	@echo "  icon              Regenerate build/AppIcon.icns from RADIO.png"
 	@echo "  clean             Remove ./build/ ./.build/ ./dist/"
 	@echo "  deps              Verify build prerequisites (auto-run before build)"
 	@echo ""
@@ -117,11 +117,12 @@ deps:
 # ---------------------------------------------------------------------------
 
 ICON_SCRIPT := scripts/make-icon.swift
+ICON_SOURCE := RADIO.png
 APP_ICON    := build/AppIcon.icns
 
-# App icon: regenerated when the script changes. The script renders the icon
-# at every macOS size and iconutil packages them.
-$(APP_ICON): $(ICON_SCRIPT)
+# App icon: regenerated when the artwork or script changes. The script resizes
+# RADIO.png to every macOS size and iconutil packages the variants.
+$(APP_ICON): $(ICON_SCRIPT) $(ICON_SOURCE)
 	@mkdir -p build
 	@swift $(ICON_SCRIPT)
 	@iconutil -c icns build/AppIcon.iconset -o $(APP_ICON)

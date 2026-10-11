@@ -22,7 +22,8 @@ struct SemanticStatusView: View {
     }
 
     private var title: String {
-        switch model.semantics.status {
+        if model.source?.revision == .before { return "Not Indexed (Before)" }
+        return switch model.semantics.status {
         case .noIndex: "No Index"
         case .indexing(let progress): progress.phase == .installing ? "Installing…" : "Indexing…"
         case .current: "Index Current"
@@ -44,7 +45,8 @@ struct SemanticStatusView: View {
     }
 
     private var help: String {
-        switch model.semantics.status {
+        if model.source?.revision == .before { return SemanticAvailability.revisionNotIndexed.explanation ?? "" }
+        return switch model.semantics.status {
         case .noIndex(let reason): reason
         case .indexing(let progress): progress.message
         case .current: "Semantic navigation matches the current files."
@@ -155,6 +157,9 @@ struct StrategyOutcomeRow: View {
             } else if outcome.capability == .sysrootOnly {
                 Text("Partial: only sysroot semantics are available for this project.")
                     .font(Theme.Fonts.meta).foregroundStyle(.secondary)
+            } else if outcome.capability == .partialBuild {
+                Text("Partial: some sources or build variants were not indexed. Compiler-resolved definitions and references in covered files remain available.")
+                    .font(Theme.Fonts.meta).foregroundStyle(.secondary)
             }
             if !outcome.missingFiles.isEmpty {
                 DisclosureGroup("\(outcome.missingFiles.count) source files not covered") {
@@ -195,6 +200,9 @@ struct StrategyOutcomeRow: View {
             return outcome.strategy.sourceFileCount > 0
                 ? "\(prefix) · \(outcome.documentCount) of \(outcome.strategy.sourceFileCount) files"
                 : "\(prefix) · \(outcome.documentCount) files"
+        case .reused(let from):
+            let prefix = outcome.capability == .fullWorkspace ? "Reused" : "Partial, reused"
+            return "\(prefix) from \(from) (identical bytes) · \(outcome.documentCount) files"
         case .failed: return "Failed"
         case .cancelled: return "Cancelled"
         }
