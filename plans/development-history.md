@@ -83,3 +83,23 @@ The round recorded `make check`, 97 tests/16 suites, signed build and packaged r
 The user then said: “yeah you fixed it, you can settle at this point.” This is final acceptance of the folding issue, independent of the benchmark/automation limitation. The status heartbeat was deleted.
 
 The documentation round rewrote the root README; added this history and `plans/agent-handoff.md`; refreshed PLAN.md; added acceptance and documentation status to PROGRESS.md; and reconciled materially stale statements. It changed no application code, tests, external tools, tkos content, or behavior and did not rerun builds/tests.
+
+## 13. Pull request review
+
+The user asked for the browser to track pull requests of the attached repository: a drop-down of the last N, a ⌘P number entry, highlighting of changed files, functions and added lines, and a per-file Before/After toggle, with the SCIP index "cloned and patched" for changed files. Fable 5.1 (Paseo agent) designed and implemented it in one round; GPT Sol tests the UI afterwards.
+
+Measured first: tkos has 10,094 tracked files (168 MiB), 13 rust-analyzer strategies totalling about 220 s, and a format-2 index cache with no per-document byte provenance; fetching a PR head and merge base by SHA into an app-owned bare repository with alternates to the user's objects takes about a second; a worktree checkout 1.5 s. The clone-and-patch idea was kept at its honest granularity: a whole strategy (crate/module/project) is reused only when a recorded git-blob content digest proves identical bytes, otherwise regenerated whole; mixed runs are Partial. Before is syntax-only.
+
+Delivered: `GitHubClient` (gh, timeouts), `ReviewRepository` (fetch by SHA, worktrees, Before blobs, eviction), `UnifiedDiff`/`FileChange`/`LineMap`, `PullRequestModel`, revision-aware `SourceLocation`/`SourceBuffer`/positions/history, metadata format 3 with digests and reuse, and the UI (toolbar menu, ⌘P sheet, Changes sidebar, Before/After control, gutter bars and washes, outline/tree dots, ⌥⌘B, ⌥⌘↓/↑, `--pull-request` launch argument). The round recorded 184 tests in 39 suites, including a real read-only tkos probe (#724 merged meanwhile with a new head, #723 merged, #725 at 744 files with renames). The first full-suite runs exposed main-actor starvation from synchronous git fixtures and a CRLF grapheme bug in the hunk parser; both were fixed.
+
+## 14. Source filters (Hide Tests, Source Files Only)
+
+The user asked to hide test code, including Rust test blocks in the middle of ordinary files, and to filter the Files sidebar down to source code. Opus 5.5 recorded the architecture in `plans/source-filters.md`, then implemented it:
+
+- Two independent persisted toggles sit beside the Files filter field and in the View menu.
+- Component-exact test-path and source-file classifiers drive a pruned Files tree with explicit, path-keyed expansion state.
+- A Tree-sitter test-region detector covers Rust (three-valued `cfg` evaluation), Kotlin, TS/TSX/JS and best-effort Python.
+- Hidden test regions join the existing fold union as a presentation projection, with a dimmed header, gutter capsule and clickable label.
+- Navigation reveals its target's region, and Back stays exact.
+
+Gates: 210 tests / 43 suites, signed 23:16:01 CDT. The real tkos probe matched GPT Sol's anchors (`app.rs` 803–833 with 834 production visible). Live UI acceptance belongs to GPT Sol (`plans/source-filters-ui-review.md`).

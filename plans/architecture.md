@@ -4,13 +4,32 @@ The executable is `Radiology`, built directly with SwiftPM. SwiftUI owns the win
 
 ## State and ownership
 
+`BookmarkModel` owns a persisted ordered list for the canonical attached checkout
+and optional PR number. `BookmarkStore` uses injected preferences; BookmarkResolver
+reads and safely relocates saved byte/line anchors off MainActor. Bookmark jumps
+preserve Before/After through the shared exact-caret history path. Two nested
+native splits provide the third Context pane and independently movable dividers.
+See [bookmarks.md](bookmarks.md).
+
 `RadiologyApp` owns one `@State AppModel`, an `@Observable @MainActor` class passed through the environment. It owns repository/source/search state, canonical navigation destinations, navigation history, errors, and UI presentation. Workers do not mutate UI state.
+
+`ReaderSessionStore` persists the last confirmed attached repository path and PR
+number in injected UserDefaults. The window's one-time launch task restores that
+identity through fresh repository/PR preparation, suppressing intermediate
+local-mode saves. Explicit CLI/manual choices supersede startup; Exit PR saves
+local mode; failed restoration retains the record for retry. Cached worktree
+paths and source byte positions are never persisted across launches. See
+[session restoration](session-restoration.md).
 
 `RepositoryWorker`, `SourceStore`, `CommandRunner`, `SearchWorker`, `SyntaxWorker`, `SemanticIndexService`, `ToolProvisioner`, and `SemanticQueryWorker` are actors. Disk, parsing, and subprocess work stays outside MainActor. Tasks are cancelled when requests are superseded. Generation identifiers prevent old completions or streamed batches from replacing newer state. RunningProcess serializes launch/cancellation with a lock; it is the sole manually Sendable process wrapper.
 
 ## Repository
 
 Git discovery uses `rev-parse --show-toplevel` and NUL-delimited `ls-files --cached --others --exclude-standard`. NUL delimiters preserve spaces and embedded newlines. Files are deduplicated, filtered for generated directories, and transformed into an explicit `FileNode` tree. Non-Git folders use relative filesystem enumeration; this avoids macOS /var versus /private/var aliases changing path slicing. Symlink directories are not traversed in the fallback. SourceStore rejects links escaping the selected root.
+
+The sidebar's Files tree is a filtered view (`AppModel.fileTree`) of the
+snapshot under `SourceFilters`; the snapshot itself, search, the quick file
+picker and indexing always see every file (plans/source-filters.md).
 
 ## Source and coordinates
 
@@ -45,6 +64,14 @@ SearchWorker launches ripgrep with JSON output. Query options are argument-array
 Tree-sitter consumes SourceBuffer's UTF-8 bytes directly. Query results remain byte ranges until SourceBuffer converts them at the TextKit boundary. Predicates are evaluated against those same byte ranges rather than SwiftTreeSitter's UTF-16-derived `Node.range`. See `plans/tree-sitter.md`.
 
 ## Semantics
+
+`ContextModel` owns reference disclosure and asynchronous caller-tree phases.
+`ReferenceCallTreeWorker` traces incoming exact SCIP references verified against
+parsed call sites, with per-request file/edge caches, path-local cycle detection,
+and incremental row budgets without a depth cutoff. Boundaries preserve unknown
+invocations rather than inventing edges. A native VSplitView resizes independently
+scrolling References and Definition/Outline. See
+[reference-call-trees.md](reference-call-trees.md).
 
 `SemanticIndexService` owns SCIP generation per repository: it inspects build files, selects `IndexingStrategy` values from the adapter registry, loads the cached index and compares fingerprints, runs indexers through `IndexerProcess` (posix_spawn, own process group, file-backed stdout/stderr, bounded tails), decodes the protobuf with the in-tree `SCIPDecoder`, and publishes a `SemanticPublication` atomically under a generation guard. `SemanticModel` is the `@Observable @MainActor` owner of status, outcomes, the open file's `DocumentSemantics`, caret target, references, and ⌘T matches; `AppModel+Semantics` turns targets into exact-history navigation. SCIP line/column coordinates convert to canonical bytes only in `SourceBuffer` and `DocumentSemantics`, against the file as loaded, and never produce positions that do not fit the current bytes. Generated data lives in `~/Library/Caches/Radiology/repositories/<id>/`. See `plans/scip-semantic-navigation.md`.
 

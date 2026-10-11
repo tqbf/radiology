@@ -8,7 +8,17 @@ struct SourceBuffer: Sendable {
     let lineStarts: [Int]
     let utf16LineStarts: [Int]
     let utf16Count: Int
+    /// The pull request revision these bytes came from, or nil for the
+    /// attached repository's own files. Set by the loader, never by TextKit.
+    var revision: ReviewRevision?
     var lineCount: Int { lineStarts.count }
+
+    /// Where this buffer sits: its path in its revision.
+    func location(atByte byte: Int) -> SourceLocation {
+        SourceLocation(path: path, byteOffset: byte, revision: revision)
+    }
+
+    var positionKey: String { SourceLocation.positionKey(path: path, revision: revision) }
 
     init(path: String, data: Data) throws {
         guard !data.contains(0), let text = String(data: data, encoding: .utf8) else {

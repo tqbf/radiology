@@ -54,6 +54,7 @@ struct SemanticNavigationTests {
         // A symbol defined outside the repository is reported, not guessed.
         model.goBack()
         try await waitUntil { model.source?.path == "src/lib.rs" }
+        try await waitUntil { model.semantics.documentSemantics?.path == "src/lib.rs" }
         model.goToDefinition(at: lib.byteOffset(line: 8, column: 12))
         try await waitUntil { model.semantics.navigationError != nil }
         #expect(model.semantics.navigationError?.contains("outside this repository") == true)
@@ -69,12 +70,14 @@ struct SemanticNavigationTests {
         try await waitUntil { model.semantics.documentSemantics != nil }
         let shapes = try #require(model.source)
         model.findReferences(at: shapes.byteOffset(line: 1, column: 12))
-        #expect(model.inspectorMode == .semantics)
-        try await waitUntil { model.semantics.references != nil }
-        let references = try #require(model.semantics.references)
+        #expect(model.context.explicitReferences?.displayName == "Circle")
+        try await waitUntil { if case .loaded = model.context.references { true } else { false } }
+        guard case .loaded(let references) = model.context.references else { return }
         #expect(references.displayName == "Circle")
         #expect(references.groups.map(\.path) == ["src/lib.rs", "src/shapes.rs"])
         #expect(references.total == 5)
+        #expect(references.referenceCount == 4, "the definition is listed and labelled but not counted as a reference")
+        #expect(references.definitionCount == 1)
         #expect(references.groups[1].hits.first?.isDefinition == true)
         #expect(references.groups[0].hits.map(\.line) == [2, 5])
         #expect(references.groups[0].hits.first?.lineText == "pub use shapes::Circle;")
@@ -106,7 +109,11 @@ struct SemanticNavigationTests {
         try Data("let x = 1\n".utf8).write(to: plain.appending(path: "A.swift"))
         model.openRepository(plain)
         try await waitUntil { !model.isOpening }
-        try await waitUntil { if case .noIndex = model.semantics.status { true } else { false } }
+        // `.noIndex("Checking the repository…")` is set synchronously on open;
+        // wait for the service's real publication, not that placeholder.
+        try await waitUntil {
+            if case .noIndex(let reason) = model.semantics.status { reason != "Checking the repository…" } else { false }
+        }
         #expect(!model.semantics.hasIndex)
         #expect(model.semantics.documentSemantics == nil)
         #expect(model.semantics.caretTarget == nil)

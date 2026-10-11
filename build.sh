@@ -29,10 +29,14 @@ INFO_PLIST_SRC="Resources/Info.plist"
 # Build number: monotonic-ish from the date so re-signs differ. Falls back to 1.
 BUILD_NUMBER="$(date +%Y%m%d%H%M 2>/dev/null || echo 1)"
 
-echo "→ swift build -c $CONFIG"
-swift build -c "$CONFIG"
+# Swift Build generates macOS resource bundles and a Bundle.module accessor
+# that finds them in Contents/Resources. Older toolchains default to the native
+# backend, whose flat bundles and executable-relative accessor cannot be staged
+# into a signed .app using this layout.
+echo "→ swift build --build-system swiftbuild -c $CONFIG"
+swift build --build-system swiftbuild -c "$CONFIG"
 
-BIN_PATH="$(swift build -c "$CONFIG" --show-bin-path)"
+BIN_PATH="$(swift build --build-system swiftbuild -c "$CONFIG" --show-bin-path)"
 EXECUTABLE="$BIN_PATH/$APP_NAME"
 if [ ! -x "$EXECUTABLE" ]; then
 	echo "✗ executable not found at $EXECUTABLE" >&2

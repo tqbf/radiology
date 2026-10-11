@@ -28,6 +28,14 @@ enum ResourceVerification {
                 lines.append("FAIL \(language.id): \(error.localizedDescription)")
             }
         }
+        for name in ["kotlin-index.sh", "kotlin-index.gradle", "install-kotlin-indexer.sh"] {
+            if FileManager.default.isReadableFile(atPath: ScipKotlinIndexer.script(name).path) {
+                lines.append("ok   indexing script: \(name)")
+            } else {
+                isComplete = false
+                lines.append("FAIL indexing script: \(name)")
+            }
+        }
         lines.append(isComplete
                      ? "All \(SourceLanguageRegistry.all.count) grammars loaded their queries."
                      : "Some grammars could not load their queries.")

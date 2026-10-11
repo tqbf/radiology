@@ -42,7 +42,7 @@ RepositorySnapshot ─► SemanticIndexService (actor)
                         ▼
       AppModel+Semantics: goToDefinition / findReferences / navigate(toDefinition:)
                         ▼
-      ReaderTextView: ⌘-hover underline, ⌘-click, context menu   ·   InspectorView (Symbol pane)
+      ReaderTextView: ⌘-hover underline, ⌘-click, context menu   ·   ContextInspectorView (Context regions)
       SemanticStatusView (footer + diagnostics popover)         ·   SymbolSearchSheet (⌘T)
 ```
 
@@ -56,7 +56,7 @@ RepositorySnapshot ─► SemanticIndexService (actor)
 | Queries | `Semantic/SemanticQueryWorker.swift`, `SymbolSearch.swift` | Off-main: per-file byte mapping, destination resolution, references with line text, ranked symbol search. |
 | Indexing | `Semantic/Indexing/*` | Strategy detection, adapters, provisioning, cache, fingerprints, process launcher, orchestrator. |
 | Model | `Semantic/SemanticModel.swift`, `AppModel+Semantics.swift` | Main-actor state and navigation entry points. |
-| UI | `UI/SemanticStatusView.swift`, `SemanticInspectorView.swift`, `SymbolSearchSheet.swift`, `InspectorView.swift`, `Source/ReaderTextView.swift` | Footer status and popover, Symbol inspector pane, ⌘T sheet, hover/click/menu. |
+| UI | `UI/SemanticStatusView.swift`, `ContextInspectorView.swift` and the `Context/` model (see plans/context-sidebar.md), `SymbolSearchSheet.swift`, `Source/ReaderTextView.swift` | Footer status and popover, Symbol inspector pane, ⌘T sheet, hover/click/menu. |
 
 ## Decisions and alternatives
 
@@ -167,7 +167,7 @@ anchors are preserved.
 | scip-typescript | `tsconfig.json`, else `package.json` + scripts | `@sourcegraph/scip-typescript 0.4.0` (verified `--version` and `index --help` under Node 21.6.2; upstream states Node 22/24 support) | `npm install --prefix tools/npm/scip-typescript` | Adapter and provisioning implemented; `--infer-tsconfig` for JS; not run end to end yet |
 | scip-python | `pyproject.toml`/`setup.py`/`setup.cfg`/`requirements.txt` + `.py` | `@sourcegraph/scip-python 0.6.6` (verified `--version`, `index --help`); requires Python 3.10+, this machine has 3.9.1 | `npm install --prefix tools/npm/scip-python` | Adapter and provisioning implemented; expected to fail here with an inspectable diagnostic |
 | scip-clang | `compile_commands.json` | `scip-clang 0.4.0` (arm64 release binary; `--compdb-path`, `--index-output-path` verified) | Manual: no checksum is published for the release asset, so Radiology does not download it | Detect-and-run if installed; diagnostics otherwise |
-| Java/Kotlin (scip-java) | — | — | — | Not in this cut; Kotlin files are reported as unsupported |
+| Kotlin/Java Gradle (added 2026-10-07) | Gradle settings/build files + `.kt`/`.java` | scip-java compiler source `9f288dd339c7`, built as `0.13.1-radiology-9f288dd339c7` | `tools/kotlin-scip/distribution`, managed source build with JDK17+ | Kotlin2.4.20/AGP9.4.1/Gradle9.7.1 actual PR758 compilation and JVM fixture pass; caret/references/definitions/Back tested in PR After. Build failures retain Partial. See kotlin-semantic-indexing.md; physical UI unverified |
 | Swift | — | — | — | No SCIP indexer exists; reported as unsupported |
 
 Nothing is claimed for languages without an adapter. Tree-sitter outlines and
@@ -195,6 +195,34 @@ ripgrep search remain available for all of them.
 - References are not paginated; very large symbols produce long lists.
 - `references` counts come from the index and include occurrences whose files
   may have changed; the Find References result reports the unmapped count.
+
+## Revision indexes and exact-bytes reuse (pull request review)
+
+A pull request's After snapshot is indexed like a repository, with
+`IndexOpenOptions`: a flat `IndexCache` at
+`<repo-cache>/revisions/<sha>/index/`, the snapshot's git blob ids from
+`git ls-tree`, the revision SHA, and reuse sources (the working-tree cache
+keyed by the attached root, and every other indexed revision directory).
+
+`index-metadata.json` is now **format 3**: each `StrategyRecord` carries a
+`contentDigest` (SHA-256 over `path\0blob\n` for every file under the
+strategy's project directory plus build files in its ancestors;
+`ContentDigest`) and, when the file was copied rather than generated, a
+`reusedFrom` label. Working-tree runs hash their files once per generation
+to record the same digest. Format-2 records have no digest and are never
+reused; they still serve their own repository as before.
+
+Freshness for a snapshot compares digests per strategy (the mtime fingerprint
+is ignored); a working tree keeps the coarse fingerprint. Before a tool runs
+for a strategy, the service looks for a record with the same strategy id and
+digest in each reuse source, copies that `.scip` into the revision's cache,
+and reports the outcome as **Reused from <label> (identical bytes)**. All
+reused or all generated is Current; a mixed run is **Partial** because
+references from a reused project into a regenerated one may be outdated.
+Document-level surgery on a merged index is deliberately not attempted:
+`SemanticIndex` normalizes symbols and references across inputs, so the unit
+of replacement is a strategy file. The Before revision is never indexed and
+no index is mapped onto Before bytes (`SemanticAvailability.revisionNotIndexed`).
 
 ## Same-file occurrence selection
 

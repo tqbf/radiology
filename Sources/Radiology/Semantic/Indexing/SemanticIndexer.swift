@@ -9,6 +9,9 @@ protocol SemanticIndexer: Sendable {
     var defaultEncoding: ColumnEncoding { get }
     /// The pinned version Radiology installs, when it can install the tool.
     var pinnedVersion: String? { get }
+    /// Build-based indexers must run against an isolated copy of the actual
+    /// repository inputs rather than writing caches/artifacts to the checkout.
+    var requiresIsolatedWorkspace: Bool { get }
 
     /// Where this indexer applies in the repository; empty means "cannot index".
     func strategies(for inspection: RepositoryInspection) -> [IndexingStrategy]
@@ -26,6 +29,7 @@ protocol SemanticIndexer: Sendable {
 }
 
 extension SemanticIndexer {
+    var requiresIsolatedWorkspace: Bool { false }
     var versionArguments: [String] { ["--version"] }
     func parseVersion(stdout: String, stderr: String) -> String? {
         let line = (stdout + "\n" + stderr).split(whereSeparator: \.isNewline).first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -35,7 +39,7 @@ extension SemanticIndexer {
 
 enum SemanticIndexerRegistry {
     static let all: [any SemanticIndexer] = [
-        RustAnalyzerIndexer(), ScipGoIndexer(), ScipTypeScriptIndexer(), ScipPythonIndexer(), ScipClangIndexer(),
+        RustAnalyzerIndexer(), ScipGoIndexer(), ScipTypeScriptIndexer(), ScipPythonIndexer(), ScipClangIndexer(), ScipKotlinIndexer(),
     ]
 
     static func indexer(_ id: String) -> (any SemanticIndexer)? { all.first { $0.id == id } }

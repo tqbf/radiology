@@ -73,4 +73,31 @@ extension SourceBuffer {
         if end > start, data[end - 1] == 0x0D { end -= 1 }
         return String(decoding: data[start..<max(start, end)], as: UTF8.self)
     }
+
+    /// Bytes of a one-based line without its terminator.
+    func lineByteRange(_ line: Int) -> Range<Int> {
+        let index = max(0, min(line - 1, lineCount - 1))
+        let start = lineStarts[index]
+        var end = index + 1 < lineCount ? lineStarts[index + 1] - 1 : data.count
+        if end > start, data[end - 1] == 0x0D { end -= 1 }
+        return start..<max(start, end)
+    }
+
+    /// Line text for sidebar display, capped at `limit` bytes on a scalar
+    /// boundary with a trailing ellipsis, so generated or minified lines
+    /// cannot feed megabytes into a list row.
+    func displayLineText(_ line: Int, limit: Int = SourceBuffer.displayLineLimit) -> String {
+        let range = lineByteRange(line)
+        guard range.count > limit else { return String(decoding: data[range], as: UTF8.self) }
+        return String(decoding: data[range.lowerBound..<scalarBoundary(atOrBefore: range.lowerBound + limit, floor: range.lowerBound)], as: UTF8.self) + "…"
+    }
+
+    /// Moves a byte offset back to the start of the scalar containing it.
+    func scalarBoundary(atOrBefore offset: Int, floor: Int = 0) -> Int {
+        var byte = min(offset, data.count)
+        while byte > floor, byte < data.count, data[byte] & 0xC0 == 0x80 { byte -= 1 }
+        return byte
+    }
+
+    static let displayLineLimit = 400
 }

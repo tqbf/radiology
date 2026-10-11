@@ -1,9 +1,11 @@
 import Foundation
 import SwiftTreeSitter
 
-/// The four query roles Radiology asks of every grammar.
+/// The query roles Radiology asks of every grammar. `calls` is optional: a
+/// grammar without it simply reports no call sites (and Critical Lens
+/// summaries say so), it never guesses.
 enum SyntaxQueryRole: String, CaseIterable, Sendable {
-    case highlights, folds, symbols, scopes
+    case highlights, folds, symbols, scopes, calls
 }
 
 /// Compiled queries for one language. A role is `nil` when the grammar ships
@@ -13,6 +15,7 @@ struct SyntaxQuerySet: Sendable {
     let folds: Query?
     let symbols: Query?
     let scopes: Query?
+    let calls: Query?
 
     func query(for role: SyntaxQueryRole) -> Query? {
         switch role {
@@ -20,6 +23,7 @@ struct SyntaxQuerySet: Sendable {
         case .folds: folds
         case .symbols: symbols
         case .scopes: scopes
+        case .calls: calls
         }
     }
 }
@@ -48,7 +52,7 @@ enum SyntaxQueryLoader {
                 + "Source is shown as plain text.")
         }
         return SyntaxQuerySet(highlights: compiled[.highlights], folds: compiled[.folds],
-                              symbols: compiled[.symbols], scopes: compiled[.scopes])
+                              symbols: compiled[.symbols], scopes: compiled[.scopes], calls: compiled[.calls])
     }
 
     /// Concatenates every present `<directory>/<role>.scm` in declaration order.

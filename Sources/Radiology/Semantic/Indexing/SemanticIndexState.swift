@@ -4,6 +4,7 @@ enum SemanticCoverageCapability: String, Sendable, Equatable, Codable {
     case fullWorkspace
     case sourceOnlyNoDeps
     case sysrootOnly
+    case partialBuild
 }
 
 struct MissingSourceFile: Sendable, Equatable, Codable, Identifiable {
@@ -80,6 +81,9 @@ struct StrategyOutcome: Sendable, Equatable, Identifiable {
         case pending
         case cached(stale: Bool)
         case generated
+        /// Copied from another index whose content digest proved identical
+        /// bytes for this strategy's files (`from` is "working tree" or a SHA).
+        case reused(from: String)
         case failed(IndexingFailure)
         case cancelled
     }

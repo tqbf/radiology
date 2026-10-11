@@ -4,6 +4,14 @@ No Xcode project, no `xcodebuild`, no XcodeGen. `swift build` compiles; a shell
 script bundles and signs; `make` orchestrates. Xcode is only a toolchain
 provider (`swift`, `codesign`, `notarytool`, `stapler`).
 
+Bundled builds explicitly select SwiftPM's `swiftbuild` backend for both the
+compile and `--show-bin-path` calls. This matches the successful Swift 6.4 build
+on ELSTON and also works with Swift 6.3.3. The older toolchain defaults to the
+native backend, which emits flat resource bundles and a `Bundle.module`
+accessor that does not search an app's `Contents/Resources`; the packaging
+script requires the macOS bundles and app-aware accessor emitted by Swift Build.
+Compile-only checks and tests can still use the toolchain's default backend.
+
 ## The pieces
 
 - **`Package.swift`** — one `executableTarget` (`Radiology`) + one `testTarget`.
@@ -21,6 +29,11 @@ provider (`swift`, `codesign`, `notarytool`, `stapler`).
   missing, because without them every file would silently fall back to plain
   text. `Radiology --verify-resources` re-checks the assembled app from a
   minimal environment.
+  `Sources/Radiology/IndexingScripts` also ships in that resource bundle:
+  Kotlin's Gradle attachment, runner, and managed-tool installer. Packaged
+  verification checks all three scripts as well as the eight grammars.
+  Compiler tools are installed separately under Application Support.
+  See plans/kotlin-semantic-indexing.md.
 - **`build.sh`** — `swift build` → assemble `build/Radiology.app` (Info.plist
   with `__SHORT_VERSION__`/`__BUILD_VERSION__` substituted, `PkgInfo`, any
   dependency `*.bundle`s copied into `Contents/Resources`, the icon) → codesign.
@@ -29,6 +42,12 @@ provider (`swift`, `codesign`, `notarytool`, `stapler`).
 - **`Makefile`** — the front door. `make help` lists everything.
 - **`Resources/Info.plist`** — bundle metadata. Version strings are
   placeholders filled at build time.
+- **`RADIO.png`** — the supplied square app-icon artwork.
+  `scripts/make-icon.swift` resizes it without cropping or added decoration to
+  the ten standard macOS icon variants, and `iconutil` packages them as
+  `build/AppIcon.icns`. Both the image and script are Make dependencies, so
+  replacing either regenerates the icon on the next build. `build.sh` copies
+  it into `Contents/Resources/AppIcon.icns`; Info.plist already names `AppIcon`.
 - **`Radiology/Radiology.entitlements`** — empty entitlements for the local build. App Sandbox is off because the product launches Git and ripgrep to read selected repositories. An App Store sandbox/distribution strategy is not implemented.
 
 ## Permissions & capabilities
@@ -57,7 +76,7 @@ doing it for you:
 | `make test`   | `swift test` (swift-testing)                              |
 | `make run`    | build the `.app`, ad-hoc sign, `open` it                 |
 | `make` / build| `build/Radiology.app` (debug)                              |
-| `make icon`   | regenerate `build/AppIcon.icns`                          |
+| `make icon`   | regenerate `build/AppIcon.icns` from `RADIO.png`          |
 | `make clean`  | remove `build/ .build/ dist/`                            |
 
 ## Versioning

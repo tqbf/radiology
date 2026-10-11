@@ -42,7 +42,7 @@ struct RepositorySearchView: View {
         } else {
             List(model.matches) { match in
                 Button {
-                    model.navigate(to: match.location)
+                    model.navigate(toSearchResult: match.location)
                 } label: {
                     VStack(alignment: .leading, spacing: Theme.spacing / 2) {
                         Text("\(match.path):\(match.line)").font(Theme.Fonts.meta).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)

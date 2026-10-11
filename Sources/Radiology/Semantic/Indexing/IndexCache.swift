@@ -4,6 +4,15 @@ import CryptoKit
 /// Where generated indexes live: never inside the viewed repository.
 struct IndexCache: Sendable, Equatable {
     let root: URL
+    /// A flat cache is one directory for exactly one revision of one
+    /// repository (`…/revisions/<sha>/index`); the root argument of its
+    /// methods is ignored. The default cache keys directories by root hash.
+    let flat: Bool
+
+    init(root: URL, flat: Bool = false) {
+        self.root = root
+        self.flat = flat
+    }
 
     static var `default`: IndexCache {
         IndexCache(root: URL.cachesDirectory.appending(path: "Radiology/repositories", directoryHint: .isDirectory))
@@ -21,7 +30,7 @@ struct IndexCache: Sendable, Equatable {
     }
 
     func directory(for root: URL) -> URL {
-        self.root.appending(path: Self.repositoryID(for: root), directoryHint: .isDirectory)
+        flat ? self.root : self.root.appending(path: Self.repositoryID(for: root), directoryHint: .isDirectory)
     }
 
     func metadataURL(for root: URL) -> URL { directory(for: root).appending(path: "index-metadata.json") }
@@ -64,6 +73,13 @@ struct IndexMetadata: Codable, Sendable, Equatable {
         let capability: SemanticCoverageCapability
         let cargoError: String?
         let diagnostics: String
+        /// Exact-bytes provenance (format 3): `ContentDigest.digest` of the
+        /// files this strategy's output depends on. Absent in format-2
+        /// records, which therefore never qualify for reuse.
+        var contentDigest: String? = nil
+        /// The revision (or "working tree") whose identical-bytes index this
+        /// record's file was copied from, when it was not generated here.
+        var reusedFrom: String? = nil
     }
 
     var repositoryRoot: String
@@ -73,7 +89,31 @@ struct IndexMetadata: Codable, Sendable, Equatable {
     var generatedAt: Date
     var strategies: [StrategyRecord]
     var skippedStrategies: [IndexingStrategy]
-    var formatVersion = 2
+    var formatVersion = 3
+    /// The exact commit a snapshot index describes; nil for a working tree.
+    var revision: String? = nil
+}
+
+/// Another cache whose format-3 strategy records may be reused when their
+/// content digest equals the one about to be generated.
+struct IndexReuseSource: Sendable, Equatable {
+    let cache: IndexCache
+    /// The root the source cache is keyed by (ignored by flat caches).
+    let root: URL
+    /// Shown as the provenance of reused data ("working tree", a short SHA).
+    let label: String
+}
+
+/// How an index run should treat its cache and provenance.
+struct IndexOpenOptions: Sendable, Equatable {
+    /// Replaces the service's default cache (a revision's flat cache).
+    var cache: IndexCache? = nil
+    var reuseSources: [IndexReuseSource] = []
+    /// The exact commit being indexed, recorded in metadata; nil for a working tree.
+    var revision: String? = nil
+    /// Blob ids of the snapshot's files (from `git ls-tree`), the exact-bytes
+    /// provenance for freshness and reuse. Nil for a working tree.
+    var blobIDs: [String: String]? = nil
 }
 
 /// Fingerprints of the working tree and of the build files that steer

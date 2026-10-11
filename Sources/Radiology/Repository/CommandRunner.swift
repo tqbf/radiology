@@ -1,8 +1,9 @@
 import Foundation
 
 actor CommandRunner {
-    func run(_ executable: URL, arguments: [String], directory: URL) async throws -> Data {
+    func run(_ executable: URL, arguments: [String], directory: URL, environment: [String: String]? = nil) async throws -> Data {
         let command = RunningProcess()
+        if let environment { command.process.environment = environment }
         let output = Pipe()
         let errorURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         FileManager.default.createFile(atPath: errorURL.path, contents: nil)

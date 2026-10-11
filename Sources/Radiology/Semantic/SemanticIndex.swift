@@ -9,6 +9,14 @@ struct SemanticPosition: Hashable, Sendable {
     let encoding: ColumnEncoding
 }
 
+/// The indexer's enclosing range of a definition: the whole item, in the
+/// indexer's coordinates. It bounds a body; it is never an edge.
+struct SemanticExtent: Sendable, Equatable {
+    let path: String
+    let range: SCIPRange
+    let encoding: ColumnEncoding
+}
+
 struct SemanticOccurrence: Sendable, Equatable {
     let range: SCIPRange
     let symbol: SemanticSymbolID
@@ -39,6 +47,9 @@ final class SemanticIndex: Sendable {
     let symbols: [SemanticSymbolID: SemanticSymbol]
     let definitions: [SemanticSymbolID: [SemanticPosition]]
     let references: [SemanticSymbolID: [SemanticPosition]]
+    /// The first definition's `enclosing_range` per symbol, when the indexer
+    /// recorded one (rust-analyzer does for every definition).
+    let definitionExtents: [SemanticSymbolID: SemanticExtent]
     let sources: [SemanticIndexSource]
     /// Repository symbols with at least one in-repository definition, for ⌘T.
     let searchEntries: [SymbolSearchEntry]
@@ -53,9 +64,11 @@ final class SemanticIndex: Sendable {
     struct Input: Sendable {
         let index: SCIPIndex
         let pathPrefix: String
-        init(index: SCIPIndex, projectDirectory: String = "") {
+        let defaultEncoding: ColumnEncoding?
+        init(index: SCIPIndex, projectDirectory: String = "", defaultEncoding: ColumnEncoding? = nil) {
             self.index = index
             pathPrefix = projectDirectory.isEmpty ? "" : projectDirectory + "/"
+            self.defaultEncoding = defaultEncoding
         }
     }
 
@@ -68,12 +81,17 @@ final class SemanticIndex: Sendable {
         var symbols: [SemanticSymbolID: SemanticSymbol] = [:]
         var definitions: [SemanticSymbolID: [SemanticPosition]] = [:]
         var references: [SemanticSymbolID: [SemanticPosition]] = [:]
+        var extents: [SemanticSymbolID: SemanticExtent] = [:]
         var sources: [SemanticIndexSource] = []
         for input in inputs {
             let index = input.index
             sources.append(SemanticIndexSource(toolName: index.metadata.toolName, toolVersion: index.metadata.toolVersion,
                                                documentCount: index.documents.count))
-            let fallbackEncoding = Self.encoding(fromPositionEncoding: 0, textEncoding: index.metadata.textDocumentEncoding)
+            // TextDocumentEncoding describes file bytes, not occurrence columns.
+            // Compiler indexers can use UTF-16 columns in UTF-8 source files and
+            // omit Document.position_encoding. Prefer the adapter's contract.
+            let fallbackEncoding = input.defaultEncoding
+                ?? Self.encoding(fromPositionEncoding: 0, textEncoding: index.metadata.textDocumentEncoding)
             for external in index.externalSymbols where !external.symbol.isEmpty {
                 let id = SemanticSymbolID(symbol: external.symbol, document: "")
                 guard !id.isLocal, symbols[id] == nil else { continue }
@@ -97,6 +115,9 @@ final class SemanticIndex: Sendable {
                     let position = SemanticPosition(path: path, range: range, encoding: encoding)
                     if raw.isDefinition {
                         definitions[id, default: []].append(position)
+                        if extents[id] == nil, let enclosing = raw.enclosingRange, enclosing.isWellFormed {
+                            extents[id] = SemanticExtent(path: path, range: enclosing, encoding: encoding)
+                        }
                     } else {
                         references[id, default: []].append(position)
                     }
@@ -128,6 +149,7 @@ final class SemanticIndex: Sendable {
         self.symbols = symbols
         self.definitions = definitions
         self.references = references
+        definitionExtents = extents
         self.sources = sources
         searchEntries = definitions.compactMap { id, positions -> SymbolSearchEntry? in
             guard !id.isLocal, let symbol = symbols[id], let first = positions.min(by: { ($0.path, $0.range.startLine) < ($1.path, $1.range.startLine) }) else { return nil }

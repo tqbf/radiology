@@ -45,7 +45,7 @@ let package = Package(
                 .product(name: "TreeSitterKotlin", package: "tree-sitter-kotlin"),
                 "GrammarScanners",
             ],
-            resources: [.copy("Queries")],
+            resources: [.copy("Queries"), .copy("IndexingScripts")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(name: "RadiologyTests", dependencies: ["Radiology"], resources: [.copy("Fixtures")]),
